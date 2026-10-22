@@ -12,6 +12,7 @@ Checkpoint is a powerful snapshot management tool supporting Snapper and Timeshi
 - 🧹 **Robust Cleanup:** An advanced counting algorithm that ensures you always have exactly $N$ fresh normal snapshots, regardless of how many protected ones you have.
 - 🗑️ **Interactive Deletion:** Use `checkpoint -d` to browse and delete snapshots via an interactive `fzf` menu.
 - ⚡ **Auto-Discovery & Probing:** Automatically selects the best available snapshot backend on your system or respects manual overrides.
+- 🔄 **Smart Self-Update Detector:** Background cached check against upstream tracking branch with interactive prompt, notification, or auto-update modes.
 - 🎨 **Visual Engine:** Supports configurable Emojis and Colors.
 
 ## Installation
@@ -40,6 +41,7 @@ Checkpoint settings can be managed interactively via `checkpoint config` or by e
 - `AUTO_RETRIES`: Number of automatic retries before prompting the user (Default: `1`).
 - `INFINITE_RETRIES`: Retry failed snapshot operations continuously (`true` or `false`).
 - `SNAPSHOT_DEVICE`: Target partition or device UUID for snapshots.
+- `SELF_UPDATE_CHECK`: Automatic self-update detector mode (`prompt`, `notify`, `auto`, `off`; Default: `prompt`).
 - `USE_COLOR` / `USE_EMOJI`: Toggle color output and emojis (`true` or `false`).
 
 ## Usage

@@ -5,10 +5,17 @@ All notable changes to Checkpoint will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.35] — 2026-10-22
+## [0.10.0] — 2026-10-23
 
 ### Added
+- **Smart Self-Update Detector**: Added an asynchronous, non-blocking background update detector that queries upstream git tracking branches with a 6-hour cache, atomic cache storage, and customizable response behavior via `SELF_UPDATE_CHECK` (`prompt`, `notify`, `auto`, `off`).
+- **Interactive Self-Update Prompt**: Added interactive prompt (`[Y/n/a/d]`) when new updates are detected, with one-touch immediate update and transparent re-execution of the original command, version skipping, and automatic mode switching.
+- **Self-Update Preferences Hub**: Added dedicated `Self-Update Check` selector in `checkpoint config` (under *Error Handling*) with live mode previews and real-time FZF selector.
 - **Self-Update Command Expansion (`selfupdate`, `-U`)**: Added `selfupdate` alongside `self-update`, along with `-U`, `--self-update`, and `--selfupdate` CLI flags for quick updates across option parsing, help text, man pages, and documentation.
+
+## [0.9.35] — 2026-10-23
+
+### Added
 - **Backend Readiness Prober (`checkpoint check` / `-ch`)**: Added `check` subcommand and `-ch` / `--check` flags for instant pre-flight verification of snapshot backend readiness and CLI/porcelain IPC status.
 - **Changelog Short Flag (`-c`)**: Added `-c` short flag for `--changelog` across CLI option parsing, help text, and documentation for quick access to formatted release notes and the interactive FZF browser.
 - **XDG Base Directory Support**: Paths now respect `XDG_CONFIG_HOME` and `XDG_DATA_HOME` with declarative fallback.

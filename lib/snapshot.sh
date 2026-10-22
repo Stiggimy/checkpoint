@@ -70,6 +70,7 @@ self_update() {
     local sub_code=$?
     if [[ $sub_code -eq 10 ]]; then
         ui_ok "Checkpoint is already up to date (v$VERSION)."
+        rm -f "${CHECKPOINT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/checkpoint}/self_update.cache"
         return 0
     elif [[ $sub_code -ne 0 ]]; then
         return 1
@@ -89,6 +90,7 @@ self_update() {
         display_changelog "$new_ver" || display_changelog "latest"
         echo ""
     fi
+    rm -f "${CHECKPOINT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/checkpoint}/self_update.cache"
 }
 
 ensure_sudo() {
@@ -281,6 +283,10 @@ run_checkpoint() {
         USE_COLOR=false
         USE_EMOJI=false
         setup_colors
+    fi
+
+    if [[ "$PORCELAIN" == false ]]; then
+        check_for_tool_updates "$@"
     fi
 
     [[ "$PROTECT" == true ]] && COMMENT="$COMMENT [KEEP]"

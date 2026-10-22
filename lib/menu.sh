@@ -10,6 +10,7 @@ manage_config() {
     local init_retries=$AUTO_RETRIES; local init_inf=$INFINITE_RETRIES
     local init_device=$SNAPSHOT_DEVICE
     local init_backend=$SNAPSHOT_BACKEND
+    local init_self_update_check=$SELF_UPDATE_CHECK
     local last_idx=0
     local prev_changelog
     prev_changelog=$(cat <<EOF
@@ -35,6 +36,7 @@ EOF
         local s_dev="[${SNAPSHOT_DEVICE:-default}]"
         local s_ret="[$AUTO_RETRIES]"
         local s_inf="[OFF]"; [[ "$INFINITE_RETRIES" == true ]] && s_inf="[ON ]"
+        local s_upd="[${SELF_UPDATE_CHECK^^}]"
 
         local opt=(
             "--- RETENTION & PROTECTION ---"
@@ -48,6 +50,7 @@ EOF
             "--- ERROR HANDLING ---"
             "$(e 🔟)Auto-Retries Limit          $s_ret"
             "$(e ♾️)Infinite Retries Mode       $s_inf"
+            "$(e 🔄)Self-Update Check           $s_upd"
             "--- VISUAL STYLING ---"
             "$(e 🎨)Terminal Icons / Emojis     $s_em"
             "$(e 🌈)ANSI Syntax Colors          $s_col"
@@ -87,6 +90,8 @@ EOF
                     echo -e "🔟 Auto-Retries Limit\n─────────────────────\nNumber of times failed snapshot operations will be silently retried before prompting the user.\n\nDefault: 1" ;;
                 *Infinite*)
                     echo -e "♾️ Infinite Retries Mode\n────────────────────────\nIf enabled, snapshot commands loop endlessly until success (useful for unattended backup jobs on flaky hardware).\n\nDefault: false" ;;
+                *Self-Update*)
+                    echo -e "🔄 Self-Update Check\n────────────────────\nControls how Checkpoint checks for new versions and commits from GitHub.\n\nModes:\n• prompt: Interactive banner asking [Y/n/a/d] when updates are found (Default)\n• notify: Non-intrusive notification banner only (never pauses CLI)\n• auto: Silently and automatically update Checkpoint before running tasks\n• off: Disable automatic update checks entirely\n\nDefault: prompt" ;;
                 *Icons*|*Emojis*)
                     echo -e "🎨 Terminal Icons / Emojis\n──────────────────────────\nDisplay graphical icons (🎨, 🔒, ✅, ⚠️). Disable if your terminal font shows empty boxes or question marks.\n\nDefault: true" ;;
                 *Colors*)
@@ -151,6 +156,23 @@ EOF
                 input_retries=$(trim "$input_retries")
                 [[ "$input_retries" =~ ^[0-9]+$ ]] && AUTO_RETRIES="$input_retries" ;;
             *"Infinite Retries Mode"*) [[ "$INFINITE_RETRIES" == true ]] && INFINITE_RETRIES=false || INFINITE_RETRIES=true ;;
+            *"Self-Update Check"*)
+                local modes=(
+                    "$(e 💬)prompt  — Interactive banner: ask [Y/n/a/d] when update is available (Default)"
+                    "$(e 🔔)notify  — Notification banner only (never pauses execution)"
+                    "$(e ⚡)auto    — Automatically update before running tasks"
+                    "$(e 🚫)off     — Disable automatic self-update checks"
+                )
+                local m_choice
+                m_choice=$(printf "%s\n" "${modes[@]}" | fzf --height 10 --reverse \
+                    --header "Select Self-Update Check Mode (Current: $SELF_UPDATE_CHECK)")
+                case "$m_choice" in
+                    *prompt*) SELF_UPDATE_CHECK="prompt" ;;
+                    *notify*) SELF_UPDATE_CHECK="notify" ;;
+                    *auto*)   SELF_UPDATE_CHECK="auto" ;;
+                    *off*)    SELF_UPDATE_CHECK="off" ;;
+                esac
+                ;;
             *"Terminal Icons / Emojis"*) [[ "$USE_EMOJI" == true ]] && USE_EMOJI=false || USE_EMOJI=true ;;
             *"ANSI Syntax Colors"*) [[ "$USE_COLOR" == true ]] && USE_COLOR=false || USE_COLOR=true; setup_colors ;;
             *"View Changelog"*|*"What's New"*)
@@ -182,6 +204,7 @@ EOF
                 AUTO_RETRIES=$init_retries; INFINITE_RETRIES=$init_inf
                 SNAPSHOT_DEVICE=$init_device
                 SNAPSHOT_BACKEND=$init_backend
+                SELF_UPDATE_CHECK=$init_self_update_check
                 ui_info "Changes discarded."; break ;;
             *) continue ;;
         esac
