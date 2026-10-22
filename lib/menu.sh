@@ -4,7 +4,7 @@
 # ==============================================================================
 
 manage_config() {
-    if ! command -v fzf >/dev/null 2>&1; then ui_error "fzf required."; exit 1; fi
+    if ! ensure_fzf; then return 1; fi
     local init_emoji=$USE_EMOJI; local init_color=$USE_COLOR; local init_limit=$DEFAULT_KEEP_LIMIT
     local init_keep=$ALWAYS_KEEP; local init_create=$ALWAYS_CREATE; local init_cleanup=$ALWAYS_CLEANUP
     local init_retries=$AUTO_RETRIES; local init_inf=$INFINITE_RETRIES
@@ -13,7 +13,7 @@ manage_config() {
     local last_idx=0
     local prev_changelog
     prev_changelog=$(cat <<EOF
-📜 View Changelog / What's New
+$(e 📜)View Changelog / What's New
 ──────────────────────────────
 Browse version release notes and update history.
 
@@ -162,15 +162,15 @@ EOF
                 fi
                 ;;
             *"Features in Development"*)
-                echo -e "\n${C_BOLD}${C_YELLOW}🚧 Features in Development (Coming Soon)${C_RESET}"
+                echo -e "\n${C_BOLD}${C_YELLOW}$(e 🚧)Features in Development (Coming Soon)${C_RESET}"
                 echo "─────────────────────────────────────────"
-                echo "• 🧙 Interactive Backend Wizard"
+                echo "• $(e 🧙)Interactive Backend Wizard"
                 echo "  Guided walkthrough to add and configure custom snapshot backends."
                 echo ""
-                echo "• 🌐 Full CLI Localization & i18n"
+                echo "• $(e 🌐)Full CLI Localization & i18n"
                 echo "  Translation catalogs for multi-language CLI strings."
                 echo ""
-                echo "• 🖥️ Modern Companion GUI"
+                echo "• $(e 🖥️)Modern Companion GUI"
                 echo "  Visual dashboard for snapshot browsing and one-click restores."
                 echo ""
                 read -rp "Press Enter to return to settings menu..." _dummy

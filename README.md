@@ -74,6 +74,7 @@ checkpoint config
 | `create` | Create a system snapshot (default action when invoked with no args) | `checkpoint create` |
 | `-nc, --no-cleanup` | Create snapshot without running rotation cleanup | `checkpoint -nc` |
 | `-cl, --cleanup-only` | Run snapshot cleanup logic only (keeping last $N$ normal snapshots) | `checkpoint -cl` |
+| `-ch, --check` | Verify snapshot backend readiness and exit | `checkpoint -ch` |
 | `-l, --list` | List existing snapshots in a formatted table | `checkpoint -l` |
 | `-d, --delete [query]` | Interactive deletion menu via `fzf` or matching pattern | `checkpoint -d` |
 | **Modifiers** | | |
@@ -88,23 +89,18 @@ checkpoint config
 | `--type <type>` | Paired snapshot type (`single`, `pre`, `post`) | `checkpoint --type pre` |
 | `--pre-id <id>` | Link post-snapshot to preceding pre-snapshot ID | `checkpoint --type post --pre-id 14` |
 | `--porcelain` | Machine-readable `KEY="VALUE"` output for automated IPC | `checkpoint --porcelain` |
-| `--changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint --changelog` |
+| `-c, --changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint -c` |
+| `-U, --self-update, --selfupdate` | Pull latest updates from local git repository and reinstall | `checkpoint -U` |
 | `-v, --verbose, --debug` | Enable detailed execution debug logs | `checkpoint -v` |
 | `-V, --version` | Print version information and exit | `checkpoint -V` |
 | `-h, --help` | Display command usage and options summary | `checkpoint -h` |
 | **Subcommands** | | |
+| `check` | Verify snapshot backend readiness and exit code | `checkpoint check` |
 | `changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint changelog` |
 | `config` | Interactive settings and configuration wizard via `fzf` | `checkpoint config` |
-| `self-update` | Pull latest updates from local git repository and reinstall | `checkpoint self-update` |
+| `self-update, selfupdate` | Pull latest updates from local git repository and reinstall | `checkpoint self-update` / `checkpoint selfupdate` |
 
 See `man checkpoint` for full documentation.
 
----
+For planned features and upcoming capabilities, see [ROADMAP.md](ROADMAP.md).
 
-## 🚧 Features in Development
-
-The following features and improvements are actively planned and under development:
-
-- 🧙 **Interactive Custom Backend Wizard:** Guided step-by-step walkthrough to register and test custom snapshot backends.
-- 🌐 **Full CLI Localization (i18n):** Multi-language GNU `gettext` translation catalogs for snapshot prompts and banners.
-- 🖥️ **Modern Companion GUI:** Desktop graphical dashboard for visual snapshot management and one-click system rollbacks.

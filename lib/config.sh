@@ -3,7 +3,12 @@
 # Checkpoint Module: Configuration Management
 # ==============================================================================
 
-CONFIG_FILE="$HOME/.config/checkpoint/config"
+: "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+export XDG_CONFIG_HOME XDG_DATA_HOME
+
+CHECKPOINT_CONFIG_DIR="${CHECKPOINT_CONFIG_DIR:-$XDG_CONFIG_HOME/checkpoint}"
+CONFIG_FILE="$CHECKPOINT_CONFIG_DIR/config"
 
 # --- INTERNAL DEFAULTS ---
 USE_COLOR=true; USE_EMOJI=true; DEFAULT_KEEP_LIMIT=6

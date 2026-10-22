@@ -17,18 +17,41 @@ ensure_menu_loaded() {
 self_update() {
     detect_source_dir
     if [[ ! -d "$SOURCE_DIR" ]]; then ui_error "Source repo not found."; return 1; fi
+    if [[ ! -x "$SOURCE_DIR/install.sh" ]]; then
+        ui_error "No installer found in $SOURCE_DIR."
+        ui_info "This copy of Checkpoint was installed by a package manager; update it with your system package manager instead."
+        return 1
+    fi
+    if declare -f check_connectivity >/dev/null 2>&1; then
+        if ! check_connectivity; then
+            ui_error "No active internet connection. Cannot perform self-update."
+            return 1
+        fi
+    fi
+
     local old_ver="$VERSION"
     local old_commit
     old_commit=$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || true)
     (
         cd "$SOURCE_DIR" || exit 1
         if git remote | grep -qx 'origin'; then
-            ui_info "Pulling changes..."
+            local orig_url
+            orig_url=$(git remote get-url origin 2>/dev/null || true)
+            if [[ (-d ".agents" || -d ".gemini") && "$orig_url" =~ ^(.*github\.com[:/][^/]+/checkpoint)(\.git)?$ ]]; then
+                local base_url="${BASH_REMATCH[1]}"
+                git remote get-url public >/dev/null 2>&1 || git remote add public "${base_url}.git" 2>/dev/null || true
+                git remote set-url origin "${base_url}-dev.git"
+                git fetch origin --prune >/dev/null 2>&1 || true
+            fi
+            ui_info "Checking for updates..."
             local branch
             branch=$(git branch --show-current 2>/dev/null)
             branch=${branch:-master}
-            if ! git pull origin "$branch"; then
-                ui_error "Pull failed. Aborting self-update."
+            local pull_out
+            if ! pull_out=$(git -c advice.diverging=false pull --ff-only origin "$branch" 2>&1); then
+                local clean_err
+                clean_err=$(echo "$pull_out" | grep -vE '^[[:space:]]*hint:' | tail -n 2 | paste -sd '; ' -)
+                ui_error "Pull failed: ${clean_err:-unknown git error}. Aborting self-update."
                 exit 1
             fi
             if ! git rev-parse --abbrev-ref --symbolic-full-name "@{u}" >/dev/null 2>&1; then
@@ -37,8 +60,20 @@ self_update() {
         else
             ui_info "Local source only."
         fi
-        ./install.sh
-    ) || return 1
+        local cur_commit
+        cur_commit=$(git rev-parse HEAD 2>/dev/null || true)
+        if [[ -n "$old_commit" && "$old_commit" == "$cur_commit" ]]; then
+            exit 10
+        fi
+        ./install.sh --quiet
+    )
+    local sub_code=$?
+    if [[ $sub_code -eq 10 ]]; then
+        ui_ok "Checkpoint is already up to date (v$VERSION)."
+        return 0
+    elif [[ $sub_code -ne 0 ]]; then
+        return 1
+    fi
 
     local new_commit
     new_commit=$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || true)
@@ -68,6 +103,32 @@ run_checkpoint() {
     load_config
     setup_colors
 
+    if [[ "$1" == "check" || "$1" == "--check" || "$1" == "-ch" ]]; then
+        load_backend
+        local is_porcelain=false
+        [[ "$2" == "--porcelain" || "$3" == "--porcelain" ]] && is_porcelain=true
+        if [[ -n "$BACKEND_ID" ]]; then
+            local missing_bin=""
+            if [[ -n "$BACKEND_REQUIRES_CMD" ]] && ! command -v "$BACKEND_REQUIRES_CMD" >/dev/null 2>&1; then
+                missing_bin="$BACKEND_REQUIRES_CMD"
+            fi
+            if [[ -z "$missing_bin" ]]; then
+                if [[ "$is_porcelain" == true ]]; then
+                    backend_porcelain_output "ok" "" ""
+                else
+                    ui_ok "Active snapshot backend: ${BACKEND_NAME:-$BACKEND_ID} ($BACKEND_ID)"
+                fi
+                return 0
+            fi
+        fi
+        if [[ "$is_porcelain" == true ]]; then
+            backend_porcelain_output "error" "" "No snapshot backend configured or installed."
+        else
+            ui_warn "No snapshot backend configured or installed."
+        fi
+        return 1
+    fi
+
     if [[ "$1" == "changelog" ]]; then
         show_changelog "$2"
         return $?
@@ -77,7 +138,7 @@ run_checkpoint() {
         manage_config
         return 0
     fi
-    if [[ "$1" == "self-update" ]]; then
+    if [[ "$1" == "self-update" || "$1" == "selfupdate" ]]; then
         self_update
         return $?
     fi
@@ -161,20 +222,27 @@ run_checkpoint() {
                 fi ;;
             -v|--verbose|--debug) VERBOSE=true; shift ;;
             -V|--version) echo "Checkpoint v$VERSION${BUILD:+ (build $BUILD)}"; exit 0 ;;
-            --changelog=*)
+            -U|--self-update|--selfupdate)
+                self_update
+                exit $? ;;
+            -c=*|--changelog=*)
                 show_changelog "${1#*=}"; exit $? ;;
-            --changelog)
+            -c|--changelog)
                 if [[ "$2" =~ ^(--latest|--all|all|current|--current|-h|--help|-V|--version)$ || ( -n "$2" && "$2" != -* ) ]]; then
                     show_changelog "$2"; exit $?
                 else
                     show_changelog; exit $?
                 fi ;;
+            -ch|--check)
+                run_checkpoint check "${@:2}"
+                exit $? ;;
             -h|--help)
                 echo -e "${C_YELLOW}${C_BOLD}Checkpoint v$VERSION${BUILD:+ (build $BUILD)}${C_RESET}"
                 echo -e "Usage: ${C_GREEN}checkpoint [OPTIONS] [SUBCOMMAND]${C_RESET}"
                 echo ""
                 echo -e "${C_BOLD}Snapshot Actions:${C_RESET}"
                 echo -e "  $(e 📸)${C_CYAN}create${C_RESET}                     Create snapshot (default action)."
+                echo -e "  $(e 🔍)${C_CYAN}-ch, --check${C_RESET}               Verify snapshot backend readiness."
                 echo -e "  $(e 🆕)${C_CYAN}-nc, --no-cleanup${C_RESET}          Create snapshot without running cleanup."
                 echo -e "  $(e 🧹)${C_CYAN}-cl, --cleanup-only${C_RESET}        Run cleanup logic only (keeping last $DEFAULT_KEEP_LIMIT)."
                 echo -e "  $(e 📋)${C_CYAN}-l,  --list${C_RESET}                List existing snapshots in a clean table."
@@ -192,15 +260,17 @@ run_checkpoint() {
                 echo -e "  $(e 🏷️)${C_PURP}--type <type>${C_RESET}              Snapshot type for paired backends (single, pre, post)."
                 echo -e "  $(e 🔗)${C_PURP}--pre-id <id>${C_RESET}              Link post-snapshot to pre-snapshot ID."
                 echo -e "  $(e 🤖)${C_PURP}--porcelain${C_RESET}                Machine-readable KEY=VALUE output for external IPC."
-                echo -e "  $(e 📜)${C_PURP}--changelog [ver]${C_RESET}          View release notes or open FZF browser."
+                echo -e "  $(e 🔄)${C_PURP}-U,  --self-update, --selfupdate${C_RESET} Update Checkpoint from local git repository."
+                echo -e "  $(e 📜)${C_PURP}-c,  --changelog [ver]${C_RESET}      View release notes or open FZF browser."
                 echo -e "  $(e 🔍)${C_PURP}-v,  --verbose, --debug${C_RESET}    Enable detailed execution logs."
                 echo -e "  $(e ℹ️)${C_PURP}-V,  --version${C_RESET}             Print version information and exit."
                 echo -e "  $(e ❓)${C_PURP}-h,  --help${C_RESET}                Display command usage and options."
                 echo ""
                 echo -e "${C_BOLD}Subcommands:${C_RESET}"
+                echo -e "  $(e 🔍)${C_GREEN}check${C_RESET}                      Verify snapshot backend readiness."
                 echo -e "  $(e ⚙️)${C_GREEN}config${C_RESET}                     Interactive settings menu."
                 echo -e "  $(e 📜)${C_GREEN}changelog [version]${C_RESET}        View changelog or open interactive release notes browser."
-                echo -e "  $(e 🔄)${C_GREEN}self-update${C_RESET}                Update script from local git repository."
+                echo -e "  $(e 🔄)${C_GREEN}self-update, selfupdate${C_RESET}    Update script from local git repository."
                 return 0 ;;
             *) ui_error "Unknown option: $1"; exit 1 ;;
         esac
@@ -218,6 +288,15 @@ run_checkpoint() {
     if [[ -z "$BACKEND_REQUIRES_CMD" ]] || ! command -v "$BACKEND_REQUIRES_CMD" >/dev/null 2>&1; then
         local missing_bin="${BACKEND_REQUIRES_CMD:-unknown}"
         local b_label="${BACKEND_NAME:-None configured}"
+        if [[ -z "$BACKEND_ID" ]]; then
+            if [[ "$PORCELAIN" == true ]]; then
+                backend_porcelain_output "error" "" "No snapshot backend configured or installed."
+                exit 1
+            else
+                ui_error "No snapshot backend configured or installed. Install Timeshift or Snapper to enable snapshots."
+                exit 1
+            fi
+        fi
         if [[ "$PORCELAIN" == true ]]; then
             backend_porcelain_output "error" "" "Required binary '$missing_bin' for backend '${BACKEND_ID:-unknown}' is missing."
             exit 1
@@ -296,7 +375,7 @@ run_checkpoint() {
 
         local TARGET=""
         if [[ -z "$DELETE_PATTERN" ]]; then
-            if ! command -v fzf >/dev/null 2>&1; then
+            if ! ensure_fzf; then
                 ui_error "fzf is required for interactive selection. Provide a pattern: checkpoint -d <pattern>"
                 exit 1
             fi
@@ -304,10 +383,12 @@ run_checkpoint() {
                 ui_error "Interactive deletion menu requires a terminal. Provide a pattern: checkpoint -d <pattern>"
                 exit 1
             fi
+            local del_prompt="Delete > "
+            [[ "$USE_EMOJI" == true ]] && del_prompt="🗑️  Delete > "
             if [[ "$USE_COLOR" == true ]]; then
-                TARGET=$(echo -e "$COLOR_SNAPS" | fzf --ansi --height 45% --reverse --header "Select snapshot to delete (ESC to cancel)" --prompt "🗑️  Delete > ")
+                TARGET=$(echo -e "$COLOR_SNAPS" | fzf --ansi --height 45% --reverse --header "Select snapshot to delete (ESC to cancel)" --prompt "$del_prompt")
             else
-                TARGET=$(echo -e "$FORMATTED_SNAPS" | fzf --height 45% --reverse --header "Select snapshot to delete (ESC to cancel)" --prompt "Delete > ")
+                TARGET=$(echo -e "$FORMATTED_SNAPS" | fzf --height 45% --reverse --header "Select snapshot to delete (ESC to cancel)" --prompt "$del_prompt")
             fi
         else
             TARGET=$(echo -e "$FORMATTED_SNAPS" | grep -i "$DELETE_PATTERN" | head -n 1)

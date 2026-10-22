@@ -23,7 +23,7 @@ request_attention() {
     fi
     echo -e "\e[1;31m>>> REQUIRED ACTION: $msg <<<\e[0m\n"
     command -v notify-send >/dev/null 2>&1 && \
-        NOTIFICATION_ID=$(notify-send -p "SNAPSHOT REQUIRED" "$msg" -u critical -i dialog-warning -a "checkpoint")
+        NOTIFICATION_ID=$(notify-send -p "SNAPSHOT REQUIRED" "$msg" -u critical -i dialog-warning -a "checkpoint" 2>/dev/null || true)
     echo -e "\a"
 }
 
@@ -75,7 +75,7 @@ run_with_retry() {
         if [[ ! -t 0 ]]; then
             close_attention
             if command -v notify-send >/dev/null 2>&1; then
-                notify-send -u critical -a "checkpoint" -i dialog-error "Checkpoint Failed" "Snapshot operation '$phase' failed in unattended mode."
+                notify-send -u critical -a "checkpoint" -i dialog-error "Checkpoint Failed" "Snapshot operation '$phase' failed in unattended mode." 2>/dev/null || true
             fi
             ui_error "Non-interactive environment: $phase failed. Aborting."
             return 1

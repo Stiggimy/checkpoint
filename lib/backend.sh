@@ -3,7 +3,13 @@
 # Checkpoint Module: Modular Snapshot Backends & Driver Engine
 # ==============================================================================
 
-BACKENDS_USER_DIR="$HOME/.config/checkpoint/backends.d"
+: "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+export XDG_CONFIG_HOME XDG_DATA_HOME
+
+CHECKPOINT_CONFIG_DIR="${CHECKPOINT_CONFIG_DIR:-$XDG_CONFIG_HOME/checkpoint}"
+CHECKPOINT_DATA_DIR="${CHECKPOINT_DATA_DIR:-$XDG_DATA_HOME/checkpoint}"
+BACKENDS_USER_DIR="$CHECKPOINT_CONFIG_DIR/backends.d"
 
 # Resolves official catalog directory for backends
 get_backends_catalog_dir() {
@@ -11,6 +17,8 @@ get_backends_catalog_dir() {
         echo "$CATALOG_DIR"
     elif [[ -n "$SOURCE_DIR" && -d "$SOURCE_DIR/catalog/backends" ]]; then
         echo "$SOURCE_DIR/catalog/backends"
+    elif [[ -d "$CHECKPOINT_DATA_DIR/catalog/backends" ]]; then
+        echo "$CHECKPOINT_DATA_DIR/catalog/backends"
     elif [[ -d "$HOME/.local/share/checkpoint/catalog/backends" ]]; then
         echo "$HOME/.local/share/checkpoint/catalog/backends"
     elif [[ -d "/usr/share/checkpoint/catalog/backends" ]]; then
@@ -121,21 +129,6 @@ resolve_active_backend() {
         [[ -n "$best_conf" ]] && { echo "$best_conf"; return 0; }
     fi
 
-    # 5. Fallback to highest priority available catalog backend
-    if [[ -n "$cat_dir" && -d "$cat_dir" ]]; then
-        local best_conf="" best_pri=-1
-        for bconf in "$cat_dir"/*.conf; do
-            [[ ! -f "$bconf" ]] && continue
-            local pri
-            pri=$(grep '^PRIORITY=' "$bconf" 2>/dev/null | head -n 1 | cut -d'=' -f2)
-            pri="${pri:-0}"
-            if [[ $pri -gt $best_pri ]]; then
-                best_pri=$pri
-                best_conf="$bconf"
-            fi
-        done
-        [[ -n "$best_conf" ]] && { echo "$best_conf"; return 0; }
-    fi
     echo ""
 }
 

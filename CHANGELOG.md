@@ -8,10 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.35] — 2026-10-22
 
 ### Added
+- **Self-Update Command Expansion (`selfupdate`, `-U`)**: Added `selfupdate` alongside `self-update`, along with `-U`, `--self-update`, and `--selfupdate` CLI flags for quick updates across option parsing, help text, man pages, and documentation.
+- **Backend Readiness Prober (`checkpoint check` / `-ch`)**: Added `check` subcommand and `-ch` / `--check` flags for instant pre-flight verification of snapshot backend readiness and CLI/porcelain IPC status.
+- **Changelog Short Flag (`-c`)**: Added `-c` short flag for `--changelog` across CLI option parsing, help text, and documentation for quick access to formatted release notes and the interactive FZF browser.
+- **XDG Base Directory Support**: Paths now respect `XDG_CONFIG_HOME` and `XDG_DATA_HOME` with declarative fallback.
+- **Automatic `fzf` Dependency Installation**: Automatically installs `fzf` during `install.sh` and upon opening interactive menus (`checkpoint config`, `checkpoint -d`) using catalog package manager templates or official release fallback.
 - **In-App Changelog Browser & Release Notes**: Added `checkpoint changelog` subcommand, `--changelog` flag, interactive FZF release notes browser in `checkpoint config`, and automatic "What's New" highlights after `checkpoint self-update`.
 
 ### Changed
 - **FZF Menu & Preview Performance**: Cached static changelog preview buffers in `checkpoint config` and replaced full script re-invocations in the interactive changelog browser with direct `awk` section rendering.
+- **Packaged Install Guard & Fast-Forward Self-Update**: `checkpoint self-update` now detects system-wide package installations, enforces `--ff-only` pulls, and aligns legacy repository remote URLs automatically.
+
+### Fixed
+- **Headless & WSL Notification Fallback**: Silenced stderr output from `notify-send` when the desktop DBus notification daemon is unavailable.
 
 ## [0.9.34] — 2026-10-21
 
