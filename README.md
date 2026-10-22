@@ -88,11 +88,23 @@ checkpoint config
 | `--type <type>` | Paired snapshot type (`single`, `pre`, `post`) | `checkpoint --type pre` |
 | `--pre-id <id>` | Link post-snapshot to preceding pre-snapshot ID | `checkpoint --type post --pre-id 14` |
 | `--porcelain` | Machine-readable `KEY="VALUE"` output for automated IPC | `checkpoint --porcelain` |
+| `--changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint --changelog` |
 | `-v, --verbose, --debug` | Enable detailed execution debug logs | `checkpoint -v` |
 | `-V, --version` | Print version information and exit | `checkpoint -V` |
 | `-h, --help` | Display command usage and options summary | `checkpoint -h` |
 | **Subcommands** | | |
+| `changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint changelog` |
 | `config` | Interactive settings and configuration wizard via `fzf` | `checkpoint config` |
 | `self-update` | Pull latest updates from local git repository and reinstall | `checkpoint self-update` |
 
 See `man checkpoint` for full documentation.
+
+---
+
+## 🚧 Features in Development
+
+The following features and improvements are actively planned and under development:
+
+- 🧙 **Interactive Custom Backend Wizard:** Guided step-by-step walkthrough to register and test custom snapshot backends.
+- 🌐 **Full CLI Localization (i18n):** Multi-language GNU `gettext` translation catalogs for snapshot prompts and banners.
+- 🖥️ **Modern Companion GUI:** Desktop graphical dashboard for visual snapshot management and one-click system rollbacks.

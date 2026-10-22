@@ -17,6 +17,9 @@ ensure_menu_loaded() {
 self_update() {
     detect_source_dir
     if [[ ! -d "$SOURCE_DIR" ]]; then ui_error "Source repo not found."; return 1; fi
+    local old_ver="$VERSION"
+    local old_commit
+    old_commit=$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || true)
     (
         cd "$SOURCE_DIR" || exit 1
         if git remote | grep -qx 'origin'; then
@@ -35,7 +38,22 @@ self_update() {
             ui_info "Local source only."
         fi
         ./install.sh
-    )
+    ) || return 1
+
+    local new_commit
+    new_commit=$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || true)
+    local new_ver
+    new_ver=$(grep '^VERSION=' "$SOURCE_DIR/checkpoint" 2>/dev/null | head -n 1 | cut -d'"' -f2)
+    new_ver="${new_ver:-$VERSION}"
+
+    if [[ "$old_ver" != "$new_ver" || ("$old_commit" != "$new_commit" && -n "$old_commit") ]]; then
+        echo ""
+        ui_ok "Checkpoint updated successfully to v$new_ver!"
+        echo ""
+        ui_info "${C_BOLD}What's New in v$new_ver:${C_RESET}"
+        display_changelog "$new_ver" || display_changelog "latest"
+        echo ""
+    fi
 }
 
 ensure_sudo() {
@@ -50,6 +68,10 @@ run_checkpoint() {
     load_config
     setup_colors
 
+    if [[ "$1" == "changelog" ]]; then
+        show_changelog "$2"
+        return $?
+    fi
     if [[ "$1" == "config" ]]; then
         ensure_menu_loaded
         manage_config
@@ -139,6 +161,14 @@ run_checkpoint() {
                 fi ;;
             -v|--verbose|--debug) VERBOSE=true; shift ;;
             -V|--version) echo "Checkpoint v$VERSION${BUILD:+ (build $BUILD)}"; exit 0 ;;
+            --changelog=*)
+                show_changelog "${1#*=}"; exit $? ;;
+            --changelog)
+                if [[ "$2" =~ ^(--latest|--all|all|current|--current|-h|--help|-V|--version)$ || ( -n "$2" && "$2" != -* ) ]]; then
+                    show_changelog "$2"; exit $?
+                else
+                    show_changelog; exit $?
+                fi ;;
             -h|--help)
                 echo -e "${C_YELLOW}${C_BOLD}Checkpoint v$VERSION${BUILD:+ (build $BUILD)}${C_RESET}"
                 echo -e "Usage: ${C_GREEN}checkpoint [OPTIONS] [SUBCOMMAND]${C_RESET}"
@@ -162,12 +192,14 @@ run_checkpoint() {
                 echo -e "  $(e 🏷️)${C_PURP}--type <type>${C_RESET}              Snapshot type for paired backends (single, pre, post)."
                 echo -e "  $(e 🔗)${C_PURP}--pre-id <id>${C_RESET}              Link post-snapshot to pre-snapshot ID."
                 echo -e "  $(e 🤖)${C_PURP}--porcelain${C_RESET}                Machine-readable KEY=VALUE output for external IPC."
+                echo -e "  $(e 📜)${C_PURP}--changelog [ver]${C_RESET}          View release notes or open FZF browser."
                 echo -e "  $(e 🔍)${C_PURP}-v,  --verbose, --debug${C_RESET}    Enable detailed execution logs."
                 echo -e "  $(e ℹ️)${C_PURP}-V,  --version${C_RESET}             Print version information and exit."
                 echo -e "  $(e ❓)${C_PURP}-h,  --help${C_RESET}                Display command usage and options."
                 echo ""
                 echo -e "${C_BOLD}Subcommands:${C_RESET}"
                 echo -e "  $(e ⚙️)${C_GREEN}config${C_RESET}                     Interactive settings menu."
+                echo -e "  $(e 📜)${C_GREEN}changelog [version]${C_RESET}        View changelog or open interactive release notes browser."
                 echo -e "  $(e 🔄)${C_GREEN}self-update${C_RESET}                Update script from local git repository."
                 return 0 ;;
             *) ui_error "Unknown option: $1"; exit 1 ;;

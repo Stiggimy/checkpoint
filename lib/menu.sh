@@ -11,6 +11,18 @@ manage_config() {
     local init_device=$SNAPSHOT_DEVICE
     local init_backend=$SNAPSHOT_BACKEND
     local last_idx=0
+    local prev_changelog
+    prev_changelog=$(cat <<EOF
+📜 View Changelog / What's New
+──────────────────────────────
+Browse version release notes and update history.
+
+Select this item to open the interactive version browser.
+
+$(display_changelog "latest" 2>/dev/null || true)
+EOF
+)
+    export CFG_PREV_CHANGELOG="$prev_changelog"
 
     while true; do
         local s_em="[OFF]"; [[ "$USE_EMOJI" == true ]] && s_em="[ON ]"
@@ -39,6 +51,9 @@ manage_config() {
             "--- VISUAL STYLING ---"
             "$(e 🎨)Terminal Icons / Emojis     $s_em"
             "$(e 🌈)ANSI Syntax Colors          $s_col"
+            "--- INFORMATION ---"
+            "$(e 📜)View Changelog / What's New"
+            "$(e 🚧)Features in Development     [Preview]"
             "---"
             "$(e ✅)Save and Return"
             "$(e ❌)Discard and Exit"
@@ -51,6 +66,11 @@ manage_config() {
         choice=$(printf "%s\n" "${opt[@]}" | fzf --height 20 --reverse "${bind_args[@]}" \
             --header "--- Checkpoint Configuration ---" \
             --preview 'case "{}" in 
+                *Changelog*|*What*New*)
+                    printf "%s\n" "$CFG_PREV_CHANGELOG"
+                    ;;
+                *Features*in*Development*)
+                    echo -e "🚧 Features in Development (Coming Soon)\n─────────────────────────────────────────\nUpcoming features currently planned and in active development:\n\n• 🧙 Interactive Backend Wizard\n  Guided walkthrough to add and configure custom snapshot backends.\n\n• 🌐 Full CLI Localization & i18n\n  Translation catalogs for multi-language CLI strings.\n\n• 🖥️ Modern Companion GUI\n  Visual dashboard for snapshot browsing and one-click restores." ;;
                 *Limit*)
                     echo -e "🔟 Default Snapshot Limit\n─────────────────────────\nThe maximum number of normal system snapshots to keep.\n\nWhen a new backup is created and this limit is exceeded, Checkpoint automatically deletes the oldest normal backup to prevent your disk from filling up.\n\nImportant:\nProtected [KEEP] snapshots are NEVER counted toward this limit and are never auto-deleted.\n\nExample:\nLimit = 6. You have 6 backups. A 7th backup is taken; the 1st backup is safely pruned.\n\nDefault: 6" ;;
                 *Always*Mark*KEEP*|*\[KEEP\]*)
@@ -133,6 +153,28 @@ manage_config() {
             *"Infinite Retries Mode"*) [[ "$INFINITE_RETRIES" == true ]] && INFINITE_RETRIES=false || INFINITE_RETRIES=true ;;
             *"Terminal Icons / Emojis"*) [[ "$USE_EMOJI" == true ]] && USE_EMOJI=false || USE_EMOJI=true ;;
             *"ANSI Syntax Colors"*) [[ "$USE_COLOR" == true ]] && USE_COLOR=false || USE_COLOR=true; setup_colors ;;
+            *"View Changelog"*|*"What's New"*)
+                browse_changelog_interactive
+                local r=$?
+                if [[ $r -eq 2 ]]; then
+                    echo ""
+                    read -rp "Press Enter to return to settings menu..." _dummy
+                fi
+                ;;
+            *"Features in Development"*)
+                echo -e "\n${C_BOLD}${C_YELLOW}🚧 Features in Development (Coming Soon)${C_RESET}"
+                echo "─────────────────────────────────────────"
+                echo "• 🧙 Interactive Backend Wizard"
+                echo "  Guided walkthrough to add and configure custom snapshot backends."
+                echo ""
+                echo "• 🌐 Full CLI Localization & i18n"
+                echo "  Translation catalogs for multi-language CLI strings."
+                echo ""
+                echo "• 🖥️ Modern Companion GUI"
+                echo "  Visual dashboard for snapshot browsing and one-click restores."
+                echo ""
+                read -rp "Press Enter to return to settings menu..." _dummy
+                ;;
             *"Save and Return"*) save_config; ui_ok "Configuration updated."; break ;;
             *"Discard and Exit"*)
                 USE_EMOJI=$init_emoji; USE_COLOR=$init_color; DEFAULT_KEEP_LIMIT=$init_limit

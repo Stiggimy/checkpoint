@@ -57,6 +57,9 @@ Force BTRFS snapshot mode.
 .BR \-sd ", " \-\-snapshot\-device " \fIDEV\fR"
 Override backup target storage device or partition.
 .TP
+.BR \-\-changelog " [" \fIVERSION\fR "]"
+Display formatted release notes from the changelog. If executed interactively in a terminal without arguments and \fBfzf\fR is available, launches an interactive version browser.
+.TP
 .BR \-v ", " \-\-verbose ", " \-\-debug
 Enable detailed execution logs for troubleshooting.
 .TP
@@ -66,6 +69,9 @@ Print version information and exit.
 .BR \-h ", " \-\-help
 Display command usage and options summary.
 .SH SUBCOMMANDS
+.TP
+.B changelog \fR[\fIVERSION\fR]
+Browse interactive release history or print formatted release notes for a specific version (or \fB\-\-latest\fR).
 .TP
 .B config
 Launch interactive configuration wizard via \fBfzf\fR to configure snapshot limits, retention rules, and default backend settings.
