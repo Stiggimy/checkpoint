@@ -7,21 +7,30 @@
 NOTIFICATION_ID=""
 request_attention() {
     local msg="$1"
-    echo -e "\n\e[5;31;43m ######################################################## \e[0m"
-    echo -e "\e[1;31;43m # ATTENTION: USER INPUT REQUIRED! # \e[0m"
-    echo -e "\e[5;31;43m ######################################################## \e[0m\n"
+    local banner_start="" banner_end="" art_start="" art_end="" action_start="" action_end=""
+    if [[ "$USE_COLOR" == true && -z "${NO_COLOR:-}" ]]; then
+        banner_start=$'\e[5;31;43m'
+        banner_end=$'\e[0m'
+        art_start=$'\e[1;33m'
+        art_end=$'\e[0m'
+        action_start=$'\e[1;31m'
+        action_end=$'\e[0m'
+    fi
+    echo -e "\n${banner_start} ######################################################## ${banner_end}"
+    echo -e "${banner_start} # ATTENTION: USER INPUT REQUIRED! # ${banner_end}"
+    echo -e "${banner_start} ######################################################## ${banner_end}\n"
     if [[ "$USE_EMOJI" == true ]]; then
-        echo -e "\e[1;33m"
+        [[ -n "$art_start" ]] && echo -e "$art_start"
         echo "  █████  ████████ ████████ ███████ ███    ██ ████████ ██  ██████  ███    ██ "
         echo " ██   ██    ██       ██    ██      ████   ██    ██    ██ ██    ██ ████   ██ "
         echo " ███████    ██       ██    █████   ██ ██  ██    ██    ██ ██    ██ ██ ██  ██ "
         echo " ██   ██    ██       ██    ██      ██  ██ ██    ██    ██ ██    ██ ██  ██ ██ "
         echo " ██   ██    ██       ██    ███████ ██   ████    ██    ██  ██████  ██   ████ "
-        echo -e "\e[0m"
+        [[ -n "$art_end" ]] && echo -e "$art_end"
     else
         echo -e "${C_BOLD}${C_YELLOW}!!! ATTENTION REQUIRED !!!${C_RESET}"
     fi
-    echo -e "\e[1;31m>>> REQUIRED ACTION: $msg <<<\e[0m\n"
+    echo -e "${action_start}>>> REQUIRED ACTION: $msg <<<${action_end}\n"
     command -v notify-send >/dev/null 2>&1 && \
         NOTIFICATION_ID=$(notify-send -p "SNAPSHOT REQUIRED" "$msg" -u critical -i dialog-warning -a "checkpoint")
     echo -e "\a"

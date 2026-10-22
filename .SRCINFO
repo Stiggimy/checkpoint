@@ -1,0 +1,27 @@
+pkgbase = checkpoint-git
+	pkgdesc = Universal system snapshot manager for Snapper and Timeshift (git)
+	pkgver = 0.9.35
+	pkgrel = 1
+	url = https://github.com/Stiggimy/checkpoint
+	install = checkpoint-git.install
+	arch = any
+	license = unknown
+	makedepends = git
+	depends = bash
+	depends = coreutils
+	depends = gawk
+	depends = grep
+	depends = sed
+	depends = sudo
+	depends = util-linux
+	optdepends = fzf: interactive configuration and deletion menus
+	optdepends = snapper: Snapper snapshot backend
+	optdepends = timeshift: Timeshift BTRFS and RSYNC backends
+	optdepends = libnotify: desktop notifications for failures and unattended runs
+	optdepends = glib2: close active notifications after a retry
+	provides = checkpoint
+	conflicts = checkpoint
+	source = checkpoint-git::git+https://github.com/Stiggimy/checkpoint.git#branch=master
+	sha256sums = SKIP
+
+pkgname = checkpoint-git

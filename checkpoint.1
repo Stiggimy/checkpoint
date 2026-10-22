@@ -1,4 +1,4 @@
-.TH CHECKPOINT 1 "September 2026" "Universal Linux" "Snapshot Manager"
+.TH CHECKPOINT 1 "October 2026" "Universal Linux" "Snapshot Manager"
 .SH NAME
 checkpoint \- Universal snapshot manager using Timeshift and Snapper
 .SH SYNOPSIS
@@ -71,7 +71,7 @@ Display command usage and options summary.
 Launch interactive configuration wizard via \fBfzf\fR to configure snapshot limits, retention rules, and default backend settings.
 .TP
 .B self\-update
-Pull latest changes from the local source git repository and reinstall.
+Pull latest changes from the local source git repository and reinstall. This only works for a git checkout; package\-managed installs should be updated with the system package manager.
 .SH RETENTION LOGIC
 .B checkpoint
 uses a specialized counting algorithm for cleanup:
@@ -85,8 +85,8 @@ The counter only increments for "normal" snapshots.
 Once the counter exceeds the limit (Default: 6), older normal snapshots are deleted.
 .SH CONFIGURATION FILES
 .TP
-.B ~/.config/checkpoint/config
-Main configuration file in \fBKEY=VALUE\fR format. Managed via \fBcheckpoint config\fR. Key settings include:
+.B $XDG_CONFIG_HOME/checkpoint/config
+Main configuration file in \fBKEY=VALUE\fR format. Managed via \fBcheckpoint config\fR. The default is \fB~/.config/checkpoint/config\fR. Key settings include:
 .RS
 .IP \(bu 2
 \fBSNAPSHOT_BACKEND\fR: Active snapshot backend recipe (\fBauto\fR, \fBsnapper\fR, \fBtimeshift\-btrfs\fR, \fBtimeshift\-rsync\fR).
@@ -107,6 +107,25 @@ Main configuration file in \fBKEY=VALUE\fR format. Managed via \fBcheckpoint con
 .IP \(bu 2
 \fBUSE_COLOR\fR / \fBUSE_EMOJI\fR: UI display preferences (\fBtrue\fR or \fBfalse\fR).
 .RE
+.SH ENVIRONMENT
+.TP
+.B XDG_CONFIG_HOME
+Configuration base directory. Checkpoint uses \fB$XDG_CONFIG_HOME/checkpoint\fR.
+.TP
+.B XDG_DATA_HOME
+Data base directory. Checkpoint uses \fB$XDG_DATA_HOME/checkpoint\fR for its libraries and catalog.
+.TP
+.B CHECKPOINT_CONFIG_DIR
+Overrides the Checkpoint configuration directory.
+.TP
+.B CHECKPOINT_DATA_DIR
+Overrides the Checkpoint data directory.
+.TP
+.B CHECKPOINT_CATALOG_DIR
+Overrides the backend catalog directory.
+.TP
+.B NO_COLOR
+Disables ANSI colors for the current session when set to a non\-empty value.
 .SH SEE ALSO
 .BR advance (1),
 .BR snapper (8),

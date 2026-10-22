@@ -49,7 +49,7 @@ manage_config() {
 
         local choice
         choice=$(printf "%s\n" "${opt[@]}" | fzf --height 20 --reverse "${bind_args[@]}" \
-            --header "--- Checkpoint Configuration ---" \
+            --header "--- Checkpoint Configuration ($(tilde_path "$CONFIG_FILE")) ---" \
             --preview 'case "{}" in 
                 *Limit*)
                     echo -e "🔟 Default Snapshot Limit\n─────────────────────────\nThe maximum number of normal system snapshots to keep.\n\nWhen a new backup is created and this limit is exceeded, Checkpoint automatically deletes the oldest normal backup to prevent your disk from filling up.\n\nImportant:\nProtected [KEEP] snapshots are NEVER counted toward this limit and are never auto-deleted.\n\nExample:\nLimit = 6. You have 6 backups. A 7th backup is taken; the 1st backup is safely pruned.\n\nDefault: 6" ;;
@@ -72,7 +72,7 @@ manage_config() {
                 *Colors*)
                     echo -e "🌈 ANSI Syntax Colors\n─────────────────────\nColor-codes commands, statuses, and headers for clarity.\n\nDefault: true" ;;
                 *Save*)
-                    echo -e "💾 Save and Return\n──────────────────\nApply all changes to ~/.config/checkpoint/config permanently." ;;
+                    echo -e "💾 Save and Return\n──────────────────\nApply all changes to the Checkpoint configuration file permanently." ;;
                 *Discard*)
                     echo -e "❌ Discard and Exit\n───────────────────\nClose the menu and discard all changes made during this session." ;;
                 ---*)

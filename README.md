@@ -22,15 +22,42 @@ Clone the repository and run the installation script:
 ./install.sh
 ```
 
+The installer uses the XDG base directories for user data and configuration.
+
 ### Manual
 1. Install `timeshift` or `snapper`.
 2. Install `fzf` (for interactive menus).
 3. Copy the `checkpoint` script to your `PATH` (e.g., `~/.local/bin/`).
-4. Copy `checkpoint.1` to your man directory (e.g., `~/.local/share/man/man1/`).
+4. Copy `lib/` to `$XDG_DATA_HOME/checkpoint/lib` (default `~/.local/share/checkpoint/lib`).
+5. Copy `catalog/` to `$XDG_DATA_HOME/checkpoint/catalog` (default `~/.local/share/checkpoint/catalog`).
+6. Copy `checkpoint.1` to `$XDG_DATA_HOME/man/man1/` (default `~/.local/share/man/man1/`).
+
+### Arch Linux (PKGBUILD)
+
+A VCS `PKGBUILD` is included. It builds `checkpoint-git` from the latest commit on `master`, so rebuilding the package picks up new changes:
+
+```bash
+git clone https://github.com/Stiggimy/checkpoint.git
+cd checkpoint
+makepkg -si
+```
+
+The package installs the binary to `/usr/bin/checkpoint`, libraries to `/usr/lib/checkpoint`, the catalog to `/usr/share/checkpoint/catalog`, and the manual to `/usr/share/man/man1`. It provides `checkpoint` and conflicts with a non-VCS `checkpoint` package.
+
+`self-update` only works for a git checkout. Package-managed installs should be updated with the system package manager.
+
+## XDG directories
+
+Checkpoint follows the XDG Base Directory specification:
+
+- Configuration: `$XDG_CONFIG_HOME/checkpoint` (default `~/.config/checkpoint`)
+- Data, libraries, and catalog: `$XDG_DATA_HOME/checkpoint` (default `~/.local/share/checkpoint`)
+
+Set `CHECKPOINT_CONFIG_DIR`, `CHECKPOINT_DATA_DIR`, or `CHECKPOINT_CATALOG_DIR` to override those locations. Existing installations are migrated from the old hardcoded paths when the destination does not already exist.
 
 ## Configuration
 
-Checkpoint settings can be managed interactively via `checkpoint config` or by editing `~/.config/checkpoint/config`:
+Checkpoint settings can be managed interactively via `checkpoint config` or by editing `$XDG_CONFIG_HOME/checkpoint/config` (default `~/.config/checkpoint/config`):
 
 - `SNAPSHOT_BACKEND`: Snapshot engine to use (`auto`, `snapper`, `timeshift-btrfs`, `timeshift-rsync`).
 - `DEFAULT_KEEP_LIMIT`: Number of unprotected normal snapshots to retain during rotation (Default: `6`).
@@ -41,6 +68,8 @@ Checkpoint settings can be managed interactively via `checkpoint config` or by e
 - `INFINITE_RETRIES`: Retry failed snapshot operations continuously (`true` or `false`).
 - `SNAPSHOT_DEVICE`: Target partition or device UUID for snapshots.
 - `USE_COLOR` / `USE_EMOJI`: Toggle color output and emojis (`true` or `false`).
+
+Set `NO_COLOR` to disable ANSI colors for the current session without changing the configuration file.
 
 ## Usage
 
@@ -93,6 +122,6 @@ checkpoint config
 | `-h, --help` | Display command usage and options summary | `checkpoint -h` |
 | **Subcommands** | | |
 | `config` | Interactive settings and configuration wizard via `fzf` | `checkpoint config` |
-| `self-update` | Pull latest updates from local git repository and reinstall | `checkpoint self-update` |
+| `self-update` | Pull latest updates from a local git checkout and reinstall | `checkpoint self-update` |
 
 See `man checkpoint` for full documentation.
