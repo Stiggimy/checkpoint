@@ -39,6 +39,8 @@ BACKEND_STORAGE_FORMAT=""
 BACKEND_CAP_BOOTABLE_SUBVOL=false
 BACKEND_CAP_PAIRED_PRE_POST=false
 BACKEND_REQUIRES_CMD=""
+BACKEND_PROBE_ACTIVE_CMD=""
+BACKEND_PRIORITY=10
 BACKEND_CREATE_CMD=""
 BACKEND_LIST_CMD=""
 BACKEND_DELETE_CMD=""
@@ -145,6 +147,8 @@ load_backend() {
         BACKEND_CAP_BOOTABLE_SUBVOL=false
         BACKEND_CAP_PAIRED_PRE_POST=false
         BACKEND_REQUIRES_CMD=""
+        BACKEND_PROBE_ACTIVE_CMD=""
+        BACKEND_PRIORITY=10
         BACKEND_CREATE_CMD=""
         BACKEND_LIST_CMD=""
         BACKEND_DELETE_CMD=""
@@ -174,6 +178,8 @@ load_backend() {
             CAP_BOOTABLE_SUBVOL) BACKEND_CAP_BOOTABLE_SUBVOL="$val" ;;
             CAP_PAIRED_PRE_POST) BACKEND_CAP_PAIRED_PRE_POST="$val" ;;
             REQUIRES_CMD) BACKEND_REQUIRES_CMD="$val" ;;
+            PROBE_ACTIVE_CMD) BACKEND_PROBE_ACTIVE_CMD="$val" ;;
+            PRIORITY) BACKEND_PRIORITY="$val" ;;
             CREATE_CMD) BACKEND_CREATE_CMD="$val" ;;
             LIST_CMD) BACKEND_LIST_CMD="$val" ;;
             DELETE_CMD) BACKEND_DELETE_CMD="$val" ;;
@@ -288,4 +294,79 @@ CHECKPOINT_SUBVOL_REL="${subvol_rel}"
 CHECKPOINT_FS_UUID="${fs_uuid}"
 ${err_msg:+CHECKPOINT_ERROR=\"${err_msg}\"}
 EOF
+}
+
+save_custom_backend() {
+    local b_id="$1"
+    local b_name="$2"
+    local b_emoji="${3:-📸}"
+    local b_storage="${4:-custom}"
+    local b_bootable="${5:-false}"
+    local b_paired="${6:-false}"
+    local b_requires="${7:-}"
+    local b_probe="${8:-}"
+    local b_priority="${9:-10}"
+    local b_create="${10:-}"
+    local b_list="${11:-}"
+    local b_delete="${12:-}"
+    local b_parser="${13:-}"
+    local b_pre_create="${14:-}"
+    local b_extract_regex="${15:-}"
+    local b_subvol_template="${16:-}"
+    local conf_file="${17:-}"
+
+    if [[ -z "$conf_file" ]]; then
+        conf_file="$BACKENDS_USER_DIR/${b_id}.conf"
+    fi
+
+    if [[ -L "$conf_file" ]]; then
+        rm -f "$conf_file"
+    fi
+
+    mkdir -p "$(dirname "$conf_file")"
+    cat <<EOF > "$conf_file"
+SCHEMA_VERSION=2
+BACKEND_ID=${b_id}
+NAME="${b_name}"
+EMOJI=${b_emoji}
+STORAGE_FORMAT=${b_storage}
+CAP_BOOTABLE_SUBVOL=${b_bootable}
+CAP_PAIRED_PRE_POST=${b_paired}
+
+REQUIRES_CMD=${b_requires}
+PROBE_ACTIVE_CMD='${b_probe}'
+PRIORITY=${b_priority}
+
+CREATE_CMD='${b_create}'
+PRE_CREATE_CMD='${b_pre_create}'
+EXTRACT_ID_REGEX='${b_extract_regex}'
+SUBVOL_PATH_TEMPLATE='${b_subvol_template}'
+LIST_CMD='${b_list}'
+DELETE_CMD='${b_delete}'
+
+LIST_PARSER='${b_parser}'
+EOF
+}
+
+delete_custom_backend() {
+    local b_id="$1"
+    local target="$BACKENDS_USER_DIR/${b_id}.conf"
+    if [[ -f "$target" || -L "$target" ]]; then
+        rm -f "$target"
+        return 0
+    fi
+    return 1
+}
+
+duplicate_backend() {
+    local src_conf="$1"
+    local new_id="$2"
+    local new_name="$3"
+    [[ ! -f "$src_conf" ]] && return 1
+
+    mkdir -p "$BACKENDS_USER_DIR"
+    local dest_conf="$BACKENDS_USER_DIR/${new_id}.conf"
+    cp "$src_conf" "$dest_conf"
+    sed -i -E "s/^BACKEND_ID=.*/BACKEND_ID=${new_id}/" "$dest_conf"
+    sed -i -E "s/^NAME=.*/NAME=\"${new_name}\"/" "$dest_conf"
 }

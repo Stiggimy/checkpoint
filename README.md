@@ -12,6 +12,7 @@ Checkpoint is a powerful snapshot management tool supporting Snapper and Timeshi
 - 🧹 **Robust Cleanup:** An advanced counting algorithm that ensures you always have exactly $N$ fresh normal snapshots, regardless of how many protected ones you have.
 - 🗑️ **Interactive Deletion:** Use `checkpoint -d` to browse and delete snapshots via an interactive `fzf` menu.
 - ⚡ **Auto-Discovery & Probing:** Automatically selects the best available snapshot backend on your system or respects manual overrides.
+- 🧙 **Custom Backend Wizard:** Guided step-by-step setup (`checkpoint backend`) to create, test, and manage custom snapshot drivers (ZFS, BTRFS, RSYNC, LVM, or custom scripts).
 - 🔄 **Smart Self-Update Detector:** Background cached check against upstream tracking branch with interactive prompt, notification, or auto-update modes.
 - 🎨 **Visual Engine:** Supports configurable Emojis and Colors.
 
@@ -100,9 +101,10 @@ checkpoint config
 | `check` | Verify snapshot backend readiness and exit code | `checkpoint check` |
 | `changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint changelog` |
 | `config` | Interactive settings and configuration wizard via `fzf` | `checkpoint config` |
+| `backend, backends` | Interactive backend management & custom snapshot driver wizard | `checkpoint backend` |
 | `self-update, selfupdate` | Pull latest updates from local git repository and reinstall | `checkpoint self-update` / `checkpoint selfupdate` |
 
 See `man checkpoint` for full documentation.
 
-For planned features and upcoming capabilities, see [ROADMAP.md](ROADMAP.md).
+For upcoming features in development and full release history, see [CHANGELOG.md](CHANGELOG.md) (or run `checkpoint -c`).
 

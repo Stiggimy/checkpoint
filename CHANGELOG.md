@@ -5,6 +5,18 @@ All notable changes to Checkpoint will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Planned
+- **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
+- **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
+
+## [0.11.0] — 2026-10-23
+
+### Added
+- **Interactive Custom Backend Wizard**: Added guided step-by-step setup (`checkpoint backend` or via `checkpoint config`) with both *Guided Walkthrough* and *Quick Setup*, smart binary inference (`REQUIRES_CMD`), storage format selection, listing/deletion configuration, and full Review & Edit screen.
+- **Backend Driver Management Subsystem**: Added interactive management for snapshot backends, allowing switching active drivers, duplicating official catalog backends to custom recipes in `~/.config/checkpoint/backends.d/`, and in-place editing or deletion.
+
 ## [0.10.1] — 2026-10-23
 
 ### Fixed

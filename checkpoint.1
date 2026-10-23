@@ -85,6 +85,9 @@ Browse interactive release history or print formatted release notes for a specif
 .B config
 Launch interactive configuration wizard via \fBfzf\fR to configure snapshot limits, retention rules, and default backend settings.
 .TP
+.BR backend ", " backends
+Launch the interactive backend management dashboard and guided custom backend wizard to create, edit, or switch snapshot drivers.
+.TP
 .BR self\-update ", " selfupdate
 Pull latest changes from the local source git repository and reinstall.
 .SH RETENTION LOGIC
@@ -124,6 +127,9 @@ Main configuration file in \fBKEY=VALUE\fR format. Managed via \fBcheckpoint con
 .IP \(bu 2
 \fBUSE_COLOR\fR / \fBUSE_EMOJI\fR: UI display preferences (\fBtrue\fR or \fBfalse\fR).
 .RE
+.TP
+.B ~/.config/checkpoint/backends.d/*.conf
+Custom user-defined snapshot backend recipes created and managed via \fBcheckpoint backend\fR or \fBcheckpoint config\fR.
 .SH SEE ALSO
 .BR advance (1),
 .BR snapper (8),

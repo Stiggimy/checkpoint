@@ -140,6 +140,11 @@ run_checkpoint() {
         manage_config
         return 0
     fi
+    if [[ "$1" == "backend" || "$1" == "backends" ]]; then
+        ensure_menu_loaded
+        manage_backends_menu
+        return 0
+    fi
     if [[ "$1" == "self-update" || "$1" == "selfupdate" ]]; then
         self_update
         return $?
@@ -273,6 +278,7 @@ run_checkpoint() {
                 echo -e "${C_BOLD}Subcommands:${C_RESET}"
                 echo -e "  $(e 🔍)${C_GREEN}check${C_RESET}                      Verify snapshot backend readiness."
                 echo -e "  $(e ⚙️)${C_GREEN}config${C_RESET}                     Interactive settings menu."
+                echo -e "  $(e 🔌)${C_GREEN}backend, backends${C_RESET}          Interactive backend management and custom wizard."
                 echo -e "  $(e 📜)${C_GREEN}changelog [version]${C_RESET}        View changelog or open interactive release notes browser."
                 echo -e "  $(e 🔄)${C_GREEN}self-update, selfupdate${C_RESET}    Update script from local git repository."
                 return 0 ;;

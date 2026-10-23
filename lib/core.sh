@@ -11,6 +11,61 @@ trim() {
     printf '%s' "$var"
 }
 
+_infer_required_binary() {
+    local cmd="$1"
+    local -a words
+    read -r -a words <<< "$cmd"
+    local bin=""
+    local i
+    for ((i=0; i<${#words[@]}; i++)); do
+        local w="${words[$i]}"
+        # Skip yes | prefix if present (including args like yes y | or yes "y" |)
+        if [[ "$w" == "yes" ]]; then
+            local p_idx=-1
+            local j
+            for ((j=i+1; j<${#words[@]} && j<=i+4; j++)); do
+                if [[ "${words[$j]}" == "|" ]]; then
+                    p_idx=$j
+                    break
+                fi
+            done
+            if [[ $p_idx -ge 0 ]]; then
+                i=$p_idx
+                continue
+            fi
+        fi
+        # Strip path and quotes to identify wrapper basename
+        local base_w="${w##*/}"
+        base_w="${base_w%.exe}"
+        base_w="${base_w//[\"\'\`]/}"
+        # Skip privilege escalation, environment, and process wrappers
+        if [[ "$base_w" =~ ^(sudo|doas|pkexec|env|nice|ionice|nohup|eatmydata)$ ]]; then
+            continue
+        fi
+        # Skip environment variable assignments (e.g. FOO=bar)
+        if [[ "$w" =~ ^[A-Za-z_][A-Za-z0-9_]*=.*$ ]]; then
+            continue
+        fi
+        # Skip standalone option terminator --
+        if [[ "$w" == "--" ]]; then
+            continue
+        fi
+        # Skip wrapper flags (both short and long, e.g. -E, -u root, --user=root, --preserve-env)
+        if [[ "$w" =~ ^--?[a-zA-Z0-9_-]+(=.*)?$ ]]; then
+            if [[ "$w" =~ ^(-[ugphaCnc]|--(user|group|prompt|directory|class|priority))$ && $((i+1)) -lt ${#words[@]} ]]; then
+                ((i++))
+            fi
+            continue
+        fi
+        # Strip path, optional .exe suffix, and any residual quotes
+        bin="${w##*/}"
+        bin="${bin%.exe}"
+        bin="${bin//[\"\'\`]/}"
+        break
+    done
+    echo "$bin"
+}
+
 setup_colors() {
     if [[ "$USE_COLOR" == true ]]; then
         C_RED='\033[0;31m'; C_GREEN='\033[0;32m'; C_YELLOW='\033[0;33m'
@@ -54,7 +109,12 @@ extract_changelog_section() {
     [[ -z "$changelog" || ! -f "$changelog" ]] && return 1
 
     if [[ "$target_ver" == "latest" || "$target_ver" == "--latest" || -z "$target_ver" ]]; then
-        target_ver=$(grep -E '^## \[' "$changelog" 2>/dev/null | head -n 1 | sed -E 's/^## \[([^]]+)\].*/\1/')
+        target_ver=$(grep -E '^## \[[0-9]' "$changelog" 2>/dev/null | head -n 1 | sed -E 's/^## \[([^]]+)\].*/\1/')
+        if [[ -z "$target_ver" ]]; then
+            target_ver=$(grep -E '^## \[' "$changelog" 2>/dev/null | head -n 1 | sed -E 's/^## \[([^]]+)\].*/\1/')
+        fi
+    elif [[ "$target_ver" == "unreleased" || "$target_ver" == "Unreleased" || "$target_ver" == "--unreleased" || "$target_ver" == "upcoming" ]]; then
+        target_ver="Unreleased"
     elif [[ "$target_ver" == "current" || "$target_ver" == "--current" ]]; then
         target_ver="${VERSION:-}"
         if [[ -z "$target_ver" && -n "${SOURCE_DIR:-}" && -f "$SOURCE_DIR/checkpoint" ]]; then
@@ -74,7 +134,7 @@ extract_changelog_section() {
             if (in_ver) exit
             prefix = "## [" target
             rest = substr($0, length(prefix) + 1)
-            if (substr($0, 1, length(prefix)) == prefix && rest ~ /^[[:space:]]*\]/) {
+            if (tolower(substr($0, 1, length(prefix))) == tolower(prefix) && rest ~ /^[[:space:]]*\]/) {
                 in_ver = 1
                 print
                 next
@@ -186,7 +246,10 @@ browse_changelog_interactive() {
             local ver="${BASH_REMATCH[1]}"
             local dt="${BASH_REMATCH[3]:-}"
             local tag=""
-            if [[ "$is_first" == true ]]; then
+            if [[ "${ver,,}" == "unreleased" ]]; then
+                dt="(upcoming)"
+                tag=" 🚧 in development"
+            elif [[ "$is_first" == true ]]; then
                 tag=" ★ latest"
                 is_first=false
             fi
@@ -216,7 +279,7 @@ browse_changelog_interactive() {
                     prefix = "## [" target
                     rest = substr($0, length(prefix) + 1)
                     char1 = substr(rest, 1, 1)
-                    if (substr($0, 1, length(prefix)) == prefix && (char1 == "]" || char1 == " " || char1 == "-")) {
+                    if (tolower(substr($0, 1, length(prefix))) == tolower(prefix) && (char1 == "]" || char1 == " " || char1 == "-")) {
                         in_ver = 1
                         print C_YELLOW $0 C_RESET
                         next
@@ -258,8 +321,8 @@ browse_changelog_interactive() {
 show_changelog() {
     local req_ver="$1"
     if [[ "$req_ver" == "-h" || "$req_ver" == "--help" ]]; then
-        echo -e "${C_BOLD}Usage:${C_RESET} checkpoint changelog [VERSION|--latest|all|current]"
-        echo -e "       checkpoint -c, --changelog [VERSION|--latest|all|current]"
+        echo -e "${C_BOLD}Usage:${C_RESET} checkpoint changelog [VERSION|--latest|all|current|unreleased]"
+        echo -e "       checkpoint -c, --changelog [VERSION|--latest|all|current|unreleased]"
         echo ""
         echo "Display release notes and version history."
         echo ""
@@ -267,6 +330,7 @@ show_changelog() {
         echo "  [VERSION]       Display release notes for a specific version (e.g., 0.9.34 or v0.9.34)."
         echo "  --latest        Display release notes for the latest release."
         echo "  current         Display release notes for the currently running version."
+        echo "  unreleased      Display upcoming features currently in development."
         echo "  all, --all      Display complete formatted changelog history."
         echo "  -h, --help      Display this help message."
         echo "  -V, --version   Display version information."
