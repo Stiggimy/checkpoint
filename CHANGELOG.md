@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Self-Update Preferences Hub**: Added dedicated `Self-Update Check` selector in `checkpoint config` (under *Error Handling*) with live mode previews and real-time FZF selector.
 - **Self-Update Command Expansion (`selfupdate`, `-U`)**: Added `selfupdate` alongside `self-update`, along with `-U`, `--self-update`, and `--selfupdate` CLI flags for quick updates across option parsing, help text, man pages, and documentation.
 
+### Fixed
+- **CLI Help Menu Alignment**: Added dedicated `General:` section and aligned modifier and general option descriptions in `checkpoint -h` for uniform terminal presentation.
+
 ## [0.9.35] — 2026-10-23
 
 ### Added
