@@ -228,7 +228,15 @@ run_checkpoint() {
                     ui_error "Flag -sd requires a device."; exit 1
                 fi ;;
             -v|--verbose|--debug) VERBOSE=true; shift ;;
-            -V|--version) echo "Checkpoint v$VERSION${BUILD:+ (build $BUILD)}"; exit 0 ;;
+            -V|--version)
+                cat <<EOF
+Checkpoint v$VERSION${BUILD:+ (build $BUILD)}
+Copyright (C) 2026 Stiggimy <https://github.com/Stiggimy/checkpoint>
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+EOF
+                exit 0 ;;
             -U|--self-update|--selfupdate)
                 self_update
                 exit $? ;;
@@ -248,39 +256,39 @@ run_checkpoint() {
                 echo -e "Usage: ${C_GREEN}checkpoint [OPTIONS] [SUBCOMMAND]${C_RESET}"
                 echo ""
                 echo -e "${C_BOLD}Snapshot Actions:${C_RESET}"
-                echo -e "  $(e 📸)${C_CYAN}create${C_RESET}                     Create snapshot (default action)."
-                echo -e "  $(e 🔍)${C_CYAN}-ch, --check${C_RESET}               Verify snapshot backend readiness."
-                echo -e "  $(e 🆕)${C_CYAN}-nc, --no-cleanup${C_RESET}          Create snapshot without running cleanup."
-                echo -e "  $(e 🧹)${C_CYAN}-cl, --cleanup-only${C_RESET}        Run cleanup logic only (keeping last $DEFAULT_KEEP_LIMIT)."
-                echo -e "  $(e 📋)${C_CYAN}-l,  --list${C_RESET}                List existing snapshots in a clean table."
-                echo -e "  $(e 🗑️)${C_CYAN}-d,  --delete [query]${C_RESET}      Targeted deletion: Opens a menu or matches a pattern."
+                print_help_entry "📸" "$C_CYAN" "create" "Create snapshot (default action)."
+                print_help_entry "🔍" "$C_CYAN" "-ch,  --check" "Verify snapshot backend readiness."
+                print_help_entry "🆕" "$C_CYAN" "-nc,  --no-cleanup" "Create snapshot without running cleanup."
+                print_help_entry "🧹" "$C_CYAN" "-cl,  --cleanup-only" "Run cleanup logic only (keeping last $DEFAULT_KEEP_LIMIT)."
+                print_help_entry "📋" "$C_CYAN" "-l,   --list" "List existing snapshots in a clean table."
+                print_help_entry "🗑️" "$C_CYAN" "-d,   --delete [query]" "Targeted deletion: Opens a menu or matches a pattern."
                 echo ""
                 echo -e "${C_BOLD}Modifiers:${C_RESET}"
-                echo -e "  $(e 💬)${C_PURP}-m,  --comment <msg>${C_RESET}          Add a custom description to the snapshot."
-                echo -e "  $(e 🔒)${C_PURP}-ks, --keep-snapshot${C_RESET}          Mark as [KEEP] (won't be auto-deleted)."
-                echo -e "  $(e 🔥)${C_PURP}-f,  --force-delete${C_RESET}           Override protection and delete [KEEP] snapshots."
-                echo -e "  $(e 🔟)${C_PURP}-k,  --keep <N>${C_RESET}               Temporary retention override limit."
-                echo -e "  $(e ⏱️)${C_PURP}-r,  --rsync${C_RESET}                  Force RSYNC snapshot mode."
-                echo -e "  $(e ⚡)${C_PURP}-b,  --btrfs${C_RESET}                  Force BTRFS snapshot mode."
-                echo -e "  $(e 💾)${C_PURP}-sd, --snapshot-device <dev>${C_RESET}  Override backup device path/UUID."
-                echo -e "  $(e 🔌)${C_PURP}--backend <name>${C_RESET}              Select snapshot backend (e.g. snapper, timeshift-btrfs)."
-                echo -e "  $(e 🏷️)${C_PURP}--type <type>${C_RESET}                 Snapshot type for paired backends (single, pre, post)."
-                echo -e "  $(e 🔗)${C_PURP}--pre-id <id>${C_RESET}                 Link post-snapshot to pre-snapshot ID."
-                echo -e "  $(e 🤖)${C_PURP}--porcelain${C_RESET}                   Machine-readable KEY=VALUE output for external IPC."
+                print_help_entry "💬" "$C_PURP" "-m,   --comment <msg>" "Add a custom description to the snapshot."
+                print_help_entry "🔒" "$C_PURP" "-ks,  --keep-snapshot" "Mark as [KEEP] (won't be auto-deleted)."
+                print_help_entry "🔥" "$C_PURP" "-f,   --force-delete" "Override protection and delete [KEEP] snapshots."
+                print_help_entry "🔟" "$C_PURP" "-k,   --keep <N>" "Temporary retention override limit."
+                print_help_entry "⏱️" "$C_PURP" "-r,   --rsync" "Force RSYNC snapshot mode."
+                print_help_entry "⚡" "$C_PURP" "-b,   --btrfs" "Force BTRFS snapshot mode."
+                print_help_entry "💾" "$C_PURP" "-sd,  --snapshot-device <dev>" "Override backup device path/UUID."
+                print_help_entry "🔌" "$C_PURP" "--backend <name>" "Select snapshot backend (e.g. snapper, timeshift-btrfs)."
+                print_help_entry "🏷️" "$C_PURP" "--type <type>" "Snapshot type for paired backends (single, pre, post)."
+                print_help_entry "🔗" "$C_PURP" "--pre-id <id>" "Link post-snapshot to pre-snapshot ID."
+                print_help_entry "🤖" "$C_PURP" "--porcelain" "Machine-readable KEY=VALUE output for external IPC."
                 echo ""
                 echo -e "${C_BOLD}General:${C_RESET}"
-                echo -e "  $(e 🔄)${C_PURP}-U, --self-update, --selfupdate${C_RESET}  Update Checkpoint from local git repository."
-                echo -e "  $(e 📜)${C_PURP}-c,   --changelog [ver]${C_RESET}          View release notes or open FZF browser."
-                echo -e "  $(e ℹ️)${C_PURP}-V,   --version${C_RESET}                  Print version information and exit."
-                echo -e "  $(e 🔍)${C_PURP}-v,   --verbose, --debug${C_RESET}         Enable detailed execution logs."
-                echo -e "  $(e ❓)${C_PURP}-h,   --help${C_RESET}                     Display command usage and options."
+                print_help_entry "🔄" "$C_PURP" "-U,   --self-update, --selfupdate" "Update Checkpoint from local git repository."
+                print_help_entry "📜" "$C_PURP" "-c,   --changelog [ver]" "View release notes or open FZF browser."
+                print_help_entry "ℹ️" "$C_PURP" "-V,   --version" "Print version information and exit."
+                print_help_entry "🔍" "$C_PURP" "-v,   --verbose, --debug" "Enable detailed execution logs."
+                print_help_entry "❓" "$C_PURP" "-h,   --help" "Display command usage and options."
                 echo ""
                 echo -e "${C_BOLD}Subcommands:${C_RESET}"
-                echo -e "  $(e 🔍)${C_GREEN}check${C_RESET}                      Verify snapshot backend readiness."
-                echo -e "  $(e ⚙️)${C_GREEN}config${C_RESET}                     Interactive settings menu."
-                echo -e "  $(e 🔌)${C_GREEN}backend, backends${C_RESET}          Interactive backend management and custom wizard."
-                echo -e "  $(e 📜)${C_GREEN}changelog [version]${C_RESET}        View changelog or open interactive release notes browser."
-                echo -e "  $(e 🔄)${C_GREEN}self-update, selfupdate${C_RESET}    Update script from local git repository."
+                print_help_entry "🔍" "$C_GREEN" "check" "Verify snapshot backend readiness."
+                print_help_entry "⚙️" "$C_GREEN" "config" "Interactive settings menu."
+                print_help_entry "🔌" "$C_GREEN" "backend, backends" "Interactive backend management and custom wizard."
+                print_help_entry "📜" "$C_GREEN" "changelog [version]" "View changelog or open interactive release notes browser."
+                print_help_entry "🔄" "$C_GREEN" "self-update, selfupdate" "Update script from local git repository."
                 return 0 ;;
             *) ui_error "Unknown option: $1"; exit 1 ;;
         esac

@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.11.1] — 2026-10-23
+
+### Added
+- **Official Licensing (GNU GPLv3)**: Formally licensed the project under the GNU General Public License v3.0, adding official `LICENSE` file, and standard GNU copyright & warranty disclaimer notices to `--version` and source headers.
+- **Dynamic CLI Help Layout Engine**: Implemented `print_help_entry` to dynamically calculate column spacing, wrap long option descriptions to terminal width, and align continuation lines.
+
+### Fixed
+- **CLI Help Formatting**: Replaced manual column padding in `checkpoint -h` with dynamic formatting that adapts to terminal width and emoji display settings.
+
 ## [0.11.0] — 2026-10-23
 
 ### Added

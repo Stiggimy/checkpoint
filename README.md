@@ -21,6 +21,8 @@ Checkpoint is a powerful snapshot management tool supporting Snapper and Timeshi
 ### Automatic (Recommended)
 Clone the repository and run the installation script:
 ```bash
+git clone https://github.com/Stiggimy/checkpoint.git
+cd checkpoint
 ./install.sh
 ```
 
@@ -30,11 +32,42 @@ Clone the repository and run the installation script:
 3. Copy the `checkpoint` script to your `PATH` (e.g., `~/.local/bin/`).
 4. Copy `checkpoint.1` to your man directory (e.g., `~/.local/share/man/man1/`).
 
+## Backend Driver Architecture
+
+Checkpoint is built on a 100% declarative backend engine. Snapshot backends are defined in `.conf` recipes stored in the official catalog (`catalog/backends/`) or in your user configuration directory (`~/.config/checkpoint/backends.d/`).
+
+You can create or customize drivers interactively using `checkpoint backend` or write a custom `.conf` file:
+
+```ini
+SCHEMA_VERSION=2
+BACKEND_ID=zfs-root
+NAME="ZFS Root Dataset"
+EMOJI=📸
+STORAGE_FORMAT=zfs
+CAP_BOOTABLE_SUBVOL=true
+CAP_PAIRED_PRE_POST=false
+
+REQUIRES_CMD=zfs
+PROBE_ACTIVE_CMD="command -v zfs >/dev/null 2>&1 && zpool status >/dev/null 2>&1"
+PRIORITY=15
+
+CREATE_CMD='sudo zfs snapshot rpool/ROOT/arch@$COMMENT'
+LIST_CMD='sudo zfs list -t snapshot -o name,creation -H'
+DELETE_CMD='sudo zfs destroy "$SNAPSHOT"'
+LIST_PARSER='awk "{ print \$1 \" | \" \$2 }"'
+```
+
+### Supported Placeholders
+- `$COMMENT`: Snapshot note, description, or automatic timestamp tag.
+- `$SNAP_TYPE`: Snapshot phase for paired transactions (`single`, `pre`, or `post`).
+- `$PRE_ID`: ID of preceding pre-update snapshot (for post-snapshot linking).
+- `$SNAPSHOT`: Snapshot ID passed to `DELETE_CMD`.
+
 ## Configuration
 
 Checkpoint settings can be managed interactively via `checkpoint config` or by editing `~/.config/checkpoint/config`:
 
-- `SNAPSHOT_BACKEND`: Snapshot engine to use (`auto`, `snapper`, `timeshift-btrfs`, `timeshift-rsync`).
+- `SNAPSHOT_BACKEND`: Snapshot engine to use (`auto`, `snapper`, `timeshift-btrfs`, `timeshift-rsync`, or custom driver ID).
 - `DEFAULT_KEEP_LIMIT`: Number of unprotected normal snapshots to retain during rotation (Default: `6`).
 - `ALWAYS_KEEP`: Automatically mark all newly created snapshots as protected `[KEEP]` (`true` or `false`).
 - `ALWAYS_CREATE`: Automatically create a snapshot when invoked without flags (`true` or `false`).
@@ -44,6 +77,8 @@ Checkpoint settings can be managed interactively via `checkpoint config` or by e
 - `SNAPSHOT_DEVICE`: Target partition or device UUID for snapshots.
 - `SELF_UPDATE_CHECK`: Automatic self-update detector mode (`prompt`, `notify`, `auto`, `off`; Default: `prompt`).
 - `USE_COLOR` / `USE_EMOJI`: Toggle color output and emojis (`true` or `false`).
+
+Custom driver recipes are stored in `~/.config/checkpoint/backends.d/*.conf`.
 
 ## Usage
 
@@ -65,8 +100,11 @@ checkpoint -d
 # Targeted deletion by pattern
 checkpoint -d "kernel"
 
-# Open configuration menu
+# Open interactive configuration menu
 checkpoint config
+
+# Open interactive backend manager & custom wizard
+checkpoint backend
 ```
 
 ### CLI Options Reference
@@ -107,4 +145,10 @@ checkpoint config
 See `man checkpoint` for full documentation.
 
 For upcoming features in development and full release history, see [CHANGELOG.md](CHANGELOG.md) (or run `checkpoint -c`).
+
+---
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 (GPLv3) — see the [LICENSE](LICENSE) file for details.
 
