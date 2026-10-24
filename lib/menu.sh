@@ -135,6 +135,7 @@ EOF
             *"Always Run Cleanup"*) [[ "$ALWAYS_CLEANUP" == true ]] && ALWAYS_CLEANUP=false || ALWAYS_CLEANUP=true ;;
             *"Snapshot Backend"*)
                 manage_backends_menu
+                init_backend=$SNAPSHOT_BACKEND
                 ;;
             *"Target Backup Device"*) 
                 local input_dev
@@ -686,7 +687,13 @@ manage_backends_menu() {
         local user_confs=()
         if [[ -d "$BACKENDS_USER_DIR" ]]; then
             for f in "$BACKENDS_USER_DIR"/*.conf; do
-                [[ -f "$f" ]] && user_confs+=("$f")
+                [[ ! -f "$f" ]] && continue
+                if [[ -L "$f" && -n "$cat_dir" ]]; then
+                    local link_target
+                    link_target=$(readlink -f "$f" 2>/dev/null || true)
+                    [[ "$link_target" == "$cat_dir"/* ]] && continue
+                fi
+                user_confs+=("$f")
             done
         fi
 
@@ -761,6 +768,11 @@ manage_backends_menu() {
                 if [[ -d "$BACKENDS_USER_DIR" ]]; then
                     for f in "$BACKENDS_USER_DIR"/*.conf; do
                         [[ -f "$f" ]] || continue
+                        if [[ -L "$f" && -n "$cat_dir" ]]; then
+                            local link_target
+                            link_target=$(readlink -f "$f" 2>/dev/null || true)
+                            [[ "$link_target" == "$cat_dir"/* ]] && continue
+                        fi
                         local bid; bid=$(basename "$f" .conf)
                         b_all+=("$bid")
                         b_desc+=("Custom: $(_get_backend_conf_val "$f" "NAME")")
@@ -789,9 +801,10 @@ manage_backends_menu() {
                     --header "Select Active Snapshot Backend (Current: $SNAPSHOT_BACKEND)")
                 if [[ -n "$sel_b" ]]; then
                     local picked
-                    picked=$(echo "$sel_b" | awk '{print $2}')
+                    picked=$(echo "$sel_b" | sed -E 's/^[ ✔*]+//; s/ [—–-].*//')
                     if [[ -n "$picked" ]]; then
                         SNAPSHOT_BACKEND="$picked"
+                        save_config
                         ui_ok "Active backend set to: $SNAPSHOT_BACKEND"
                     fi
                 fi
@@ -818,6 +831,7 @@ manage_backends_menu() {
                     case "$act" in
                         *"Set as Active"*)
                             SNAPSHOT_BACKEND="$target_id"
+                            save_config
                             ui_ok "Active backend set to '$target_id'." ;;
                         *"Edit Backend"*)
                             backend_wizard "$u_target" ;;
@@ -835,7 +849,10 @@ manage_backends_menu() {
                             local confirm; read -r confirm
                             if [[ "${confirm,,}" == "y" || "${confirm,,}" == "yes" ]]; then
                                 delete_custom_backend "$target_id"
-                                [[ "$SNAPSHOT_BACKEND" == "$target_id" ]] && SNAPSHOT_BACKEND="auto"
+                                if [[ "$SNAPSHOT_BACKEND" == "$target_id" ]]; then
+                                    SNAPSHOT_BACKEND="auto"
+                                    save_config
+                                fi
                                 ui_ok "Deleted custom backend '$target_id'."
                             fi ;;
                     esac
@@ -850,6 +867,7 @@ manage_backends_menu() {
                     case "$act" in
                         *"Set as Active"*)
                             SNAPSHOT_BACKEND="$target_id"
+                            save_config
                             ui_ok "Active backend set to '$target_id'." ;;
                         *"Duplicate & Customize"*)
                             echo -n "Enter custom Backend ID [Enter for '${target_id}-custom']: "

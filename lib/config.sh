@@ -38,7 +38,7 @@ load_config() {
             AUTO_RETRIES) AUTO_RETRIES="$value" ;;
             INFINITE_RETRIES) INFINITE_RETRIES="$value" ;;
             SNAPSHOT_DEVICE) SNAPSHOT_DEVICE="$value" ;;
-            SNAPSHOT_BACKEND) SNAPSHOT_BACKEND="$value" ;;
+            SNAPSHOT_BACKEND|SNAPSHOT_DRIVER|SNAPSHOT_TYPE) SNAPSHOT_BACKEND="$value" ;;
             SELF_UPDATE_CHECK) SELF_UPDATE_CHECK="$value" ;;
         esac
     done < "$CONFIG_FILE"

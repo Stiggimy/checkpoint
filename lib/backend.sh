@@ -95,11 +95,22 @@ resolve_active_backend() {
         fi
     fi
 
-    # 3. Check for symlinked/enrolled backends in user config directory
+    # 2. Auto-probe available backends by priority (custom overrides catalog)
+    local best_conf="" best_pri=-1
+    declare -A seen_ids=()
+
     if [[ -d "$BACKENDS_USER_DIR" ]]; then
-        local best_conf="" best_pri=-1
         for bconf in "$BACKENDS_USER_DIR"/*.conf; do
             [[ ! -f "$bconf" ]] && continue
+            # Skip symlinks pointing back to the official catalog so they do not shadow higher-priority catalog backends
+            if [[ -L "$bconf" && -n "$cat_dir" ]]; then
+                local link_target
+                link_target=$(readlink -f "$bconf" 2>/dev/null || true)
+                [[ "$link_target" == "$cat_dir"/* ]] && continue
+            fi
+            local bid
+            bid=$(basename "$bconf" .conf)
+            seen_ids["$bid"]=1
             if probe_backend_conf "$bconf"; then
                 local pri
                 pri=$(grep '^PRIORITY=' "$bconf" 2>/dev/null | head -n 1 | cut -d'=' -f2)
@@ -110,14 +121,14 @@ resolve_active_backend() {
                 fi
             fi
         done
-        [[ -n "$best_conf" ]] && { echo "$best_conf"; return 0; }
     fi
 
-    # 4. Auto-probe catalog backends by priority
     if [[ -n "$cat_dir" && -d "$cat_dir" ]]; then
-        local best_conf="" best_pri=-1
         for bconf in "$cat_dir"/*.conf; do
             [[ ! -f "$bconf" ]] && continue
+            local bid
+            bid=$(basename "$bconf" .conf)
+            [[ -n "${seen_ids[$bid]}" ]] && continue
             if probe_backend_conf "$bconf"; then
                 local pri
                 pri=$(grep '^PRIORITY=' "$bconf" 2>/dev/null | head -n 1 | cut -d'=' -f2)
@@ -128,8 +139,8 @@ resolve_active_backend() {
                 fi
             fi
         done
-        [[ -n "$best_conf" ]] && { echo "$best_conf"; return 0; }
     fi
+    [[ -n "$best_conf" ]] && { echo "$best_conf"; return 0; }
 
     echo ""
 }

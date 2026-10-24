@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.11.2] — 2026-10-24
+
+### Fixed
+- **Backend Selection Parser**: Resolved an issue in the interactive backend manager where unselected items had leading spaces causing field splitting to select an em-dash (`—`) instead of the chosen backend ID.
+- **Backend Configuration Persistence**: Added immediate configuration saving (`save_config`) when activating backends in the backend manager (`checkpoint backend` or via settings), preventing changes from being discarded on exit.
+- **Snapper Probe Privilege Independence**: Relaxed Snapper's `PROBE_ACTIVE_CMD` to check `/etc/snapper/configs/root` existence without requiring active sudo authentication, allowing Snapper to be properly detected as Available in unprivileged configuration menus and `auto` mode.
+- **Catalog Symlink Auto-Resolution**: Prevented enrolled catalog symlinks in `~/.config/checkpoint/backends.d/` from shadowing higher-priority catalog backends during automatic driver resolution.
+
 ## [0.11.1] — 2026-10-23
 
 ### Added
