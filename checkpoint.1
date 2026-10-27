@@ -7,6 +7,8 @@ checkpoint \- Universal snapshot manager using Timeshift and Snapper
 .SH DESCRIPTION
 .B checkpoint
 is a system state capture tool that provides advanced retention logic for Timeshift and Snapper snapshots. It allows for "undeletable" snapshots and ensures that system state archives are managed efficiently across different Linux distributions.
+.PP
+The official Snapper driver manages the root configuration with ASCII table borders for locale-independent parsing. Snapshot 0 and snapshots marked active or default are excluded from rotation. Custom copies of the driver must be updated separately from the official catalog.
 .SH OPTIONS
 .TP
 .B create

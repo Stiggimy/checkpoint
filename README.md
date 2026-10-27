@@ -80,6 +80,8 @@ Checkpoint settings can be managed interactively via `checkpoint config` or by e
 
 Custom driver recipes are stored in `~/.config/checkpoint/backends.d/*.conf`.
 
+The official Snapper driver manages the `root` configuration and explicitly requests ASCII table borders so listing and cleanup work in UTF-8 locales. Snapshot `0` and snapshots marked active or default by Snapper (`-`, `+`, `*`) are excluded from rotation. Descriptions retain `[KEEP]` protection even when they contain `|`. If you copied the official driver into a custom recipe, update its `LIST_CMD` and `LIST_PARSER` from `catalog/backends/snapper.conf` to receive these fixes.
+
 ## Usage
 
 ### Common Examples

@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.11.4] — 2026-10-27
+
+### Fixed
+- **Snapper Cleanup in UTF-8 Locales**: Fixed empty snapshot lists and skipped cleanup caused by Unicode table separators. Snapshot descriptions containing `|` now retain their full text, including `[KEEP]` protection tags.
+
 ## [0.11.2] — 2026-10-24
 
 ### Fixed
