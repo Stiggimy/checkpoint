@@ -8,7 +8,7 @@ checkpoint \- Universal snapshot manager using Timeshift and Snapper
 .B checkpoint
 is a system state capture tool that provides advanced retention logic for Timeshift and Snapper snapshots. It allows for "undeletable" snapshots and ensures that system state archives are managed efficiently across different Linux distributions.
 .PP
-The official Snapper driver manages the root configuration with ASCII table borders for locale-independent parsing. Snapshot 0 and snapshots marked active or default are excluded from rotation. Custom copies of the driver must be updated separately from the official catalog.
+The official Snapper driver manages the root configuration with \-\-no\-dbus to bypass D-Bus daemon lock contention (Config is in use) and ASCII table borders for locale-independent parsing. Snapshot 0 and snapshots marked active or default are excluded from rotation. Custom copies of the driver must be updated separately from the official catalog.
 .SH OPTIONS
 .TP
 .B create
@@ -44,7 +44,7 @@ Limit cleanup to keep the last \fIN\fR normal snapshots. Protected snapshots are
 .BR \-\-backend " \fINAME\fR"
 Override snapshot backend driver for this run (e.g. \fBsnapper\fR, \fBtimeshift\-btrfs\fR, \fBtimeshift\-rsync\fR).
 .TP
-.BR \-\-porcelain
+.B \-\-porcelain
 Output strict machine-readable \fBKEY="VALUE"\fR metadata to stdout for IPC with Advance or automated scripts.
 .TP
 .BR \-\-type " \fItype\fR"

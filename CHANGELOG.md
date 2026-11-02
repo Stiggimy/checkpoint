@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.11.5] — 2026-11-02
+
+### Fixed
+- **Snapper D-Bus Lock Contention**: Added `--no-dbus` to the official Snapper driver recipe (`CREATE_CMD`, `LIST_CMD`, and `DELETE_CMD`), operating directly via the library/filesystem layer. This resolves `Config is in use` errors during post-update snapshot deletion and avoids background comparison latency.
+
 ## [0.11.4] — 2026-10-27
 
 ### Fixed

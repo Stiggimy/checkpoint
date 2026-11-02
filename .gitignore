@@ -6,4 +6,6 @@ Thumbs.db
 *~
 *.tmp
 *.temp
+__pycache__/
+*.pyc
 .agents/teamwork/
