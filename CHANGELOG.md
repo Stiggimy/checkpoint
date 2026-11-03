@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.12.1] — 2026-11-03
+
+### Fixed
+- **Changelog Browser Preview Pane**: Resolved an issue where release notes failed to render in the right-hand preview pane of the interactive release notes browser (`checkpoint changelog` and configuration menu) due to literal single-quote wrapping in AWK target variable passing.
+
 ## [0.12.0] — 2026-11-03
 
 ### Added
