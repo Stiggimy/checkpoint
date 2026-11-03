@@ -1,0 +1,25 @@
+post_install() {
+    cat <<'EOF'
+Checkpoint (git package) has been installed system-wide.
+
+  Binary:   /usr/bin/checkpoint
+  Catalog:  /usr/share/checkpoint/catalog/backends
+  Manual:   man checkpoint
+
+This package tracks the master branch. Rebuild it to pick up new commits.
+
+On first run, Checkpoint auto-detects your snapshot backend (Snapper or Timeshift)
+and links it into $XDG_CONFIG_HOME/checkpoint/backends.d/ (default: ~/.config/checkpoint/backends.d/).
+You can also run "checkpoint backend" or "checkpoint config" at any time.
+
+Optional extras:
+  - fzf        for interactive snapshot deletion and configuration menus
+  - snapper    for Snapper snapshot management
+  - timeshift  for Timeshift (Btrfs / Rsync) snapshot management
+  - advance    for automated transactional pre/post update snapshots
+EOF
+}
+
+post_upgrade() {
+    post_install
+}

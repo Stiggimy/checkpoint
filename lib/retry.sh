@@ -81,7 +81,7 @@ run_with_retry() {
             return 1
         fi
 
-        local p="${C_BOLD}Action:${C_RESET} [${C_GREEN}R${C_RESET}]etry | [${C_YELLOW}S${C_RESET}]kip | [${C_RED}A${C_RESET}]bort: "
+        local p="${C_BOLD}Action:${C_RESET} [${C_GREEN}R${C_RESET}]etry | [${C_CYAN}E${C_RESET}]dit | [${C_YELLOW}S${C_RESET}]kip | [${C_RED}A${C_RESET}]bort: "
         local action
         while true; do
             echo -e -n "$p"
@@ -93,9 +93,26 @@ run_with_retry() {
             echo ""
             case "$action" in
                 [Rr]) close_attention; attempts=0; break ;;
+                [Ee])
+                    echo -e "${C_BOLD}Edit command below (Enter to run, Ctrl+C to cancel):${C_RESET}"
+                    local custom_cmd=""
+                    if read -e -r -i "$cmd" -p "> " custom_cmd; then
+                        custom_cmd=$(trim "$custom_cmd")
+                        if [[ -n "$custom_cmd" ]]; then
+                            cmd="$custom_cmd"
+                            close_attention
+                            attempts=0
+                            break
+                        else
+                            ui_warn "Command cannot be empty. Please enter a valid command or select another option."
+                        fi
+                    else
+                        echo ""
+                        ui_info "Edit cancelled."
+                    fi ;;
                 [Ss]) close_attention; return 1 ;;
                 [Aa]) close_attention; exit 1 ;;
-                *) ui_warn "Invalid selection. Please enter R, S, or A." ;;
+                *) ui_warn "Invalid selection. Please enter R, E, S, or A." ;;
             esac
         done
     done

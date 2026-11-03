@@ -13,6 +13,7 @@ Checkpoint is a powerful snapshot management tool supporting Snapper and Timeshi
 - 🗑️ **Interactive Deletion:** Use `checkpoint -d` to browse and delete snapshots via an interactive `fzf` menu.
 - ⚡ **Auto-Discovery & Probing:** Automatically selects the best available snapshot backend on your system or respects manual overrides.
 - 🧙 **Custom Backend Wizard:** Guided step-by-step setup (`checkpoint backend`) to create, test, and manage custom snapshot drivers (ZFS, BTRFS, RSYNC, LVM, or custom scripts).
+- 🔁 **Interactive Error Escalation:** Escalation prompt on snapshot failures offering `[R]etry`, `[E]dit` (tweaking snapshot flags interactively on the fly via Readline), `[S]kip`, and `[A]bort`.
 - 🔄 **Smart Self-Update Detector:** Background cached check against upstream tracking branch with interactive prompt, notification, or auto-update modes.
 - 🎨 **Visual Engine:** Supports configurable Emojis and Colors.
 
@@ -25,6 +26,18 @@ git clone https://github.com/Stiggimy/checkpoint.git
 cd checkpoint
 ./install.sh
 ```
+
+### Arch Linux (PKGBUILD)
+
+A VCS `PKGBUILD` is included for a system-wide install. It builds `checkpoint-git` from the latest commit on `master`, so rebuilding the package picks up new commits:
+
+```bash
+git clone https://github.com/Stiggimy/checkpoint.git
+cd checkpoint
+makepkg -si
+```
+
+The package installs the binary to `/usr/bin/checkpoint`, libraries to `/usr/lib/checkpoint`, the catalog to `/usr/share/checkpoint/catalog`, and the manual to `/usr/share/man/man1`. It provides `checkpoint` and conflicts with a non-VCS `checkpoint` package.
 
 ### Manual
 1. Install `timeshift` or `snapper`.

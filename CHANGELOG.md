@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.12.0] — 2026-11-03
+
+### Added
+- **Interactive Command Editor on Retry (`[E]dit`)**: Added an `[E]dit` option to the failure escalation prompt (`[R]etry | [E]dit | [S]kip | [A]bort`), pre-populating an interactive Readline prompt with the failing snapshot command so users can customize flags on the fly before retrying.
+- **Arch Linux Packaging (`PKGBUILD`)**: Added VCS `PKGBUILD`, `.SRCINFO`, and `checkpoint-git.install` for system-wide Arch Linux installation (`makepkg -si`) in lockstep with Advance.
+
 ## [0.11.5] — 2026-11-02
 
 ### Fixed
