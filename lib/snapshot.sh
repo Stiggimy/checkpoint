@@ -174,7 +174,7 @@ self_update() {
     local force_repair=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --repair) force_repair=true; shift ;;
+            -r|--repair) force_repair=true; shift ;;
             *) ui_error "Unknown self-update option: $1"; return 1 ;;
         esac
     done
@@ -355,7 +355,7 @@ run_checkpoint() {
     if [[ "$1" == "check" || "$1" == "--check" || "$1" == "-ch" ]]; then
         load_backend
         local is_porcelain=false
-        [[ "$2" == "--porcelain" || "$3" == "--porcelain" ]] && is_porcelain=true
+        [[ "$2" == "--porcelain" || "$2" == "-p" || "$3" == "--porcelain" || "$3" == "-p" ]] && is_porcelain=true
         if [[ -n "$BACKEND_ID" ]]; then
             local missing_bin=""
             if [[ -n "$BACKEND_REQUIRES_CMD" ]] && ! command -v "$BACKEND_REQUIRES_CMD" >/dev/null 2>&1; then
@@ -425,20 +425,20 @@ run_checkpoint() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             create) DO_CREATE=true; shift ;;
-            --porcelain) PORCELAIN=true; shift ;;
-            --type)
+            -p|--porcelain) PORCELAIN=true; shift ;;
+            -t|--type)
                 if [[ -n "$2" && "$2" != -* ]]; then
                     SNAP_TYPE="$2"; shift 2
                 else
                     ui_error "Flag --type requires an argument (single|pre|post)."; exit 1
                 fi ;;
-            --pre-id)
+            -pi|--pre-id)
                 if [[ -n "$2" && "$2" != -* ]]; then
                     PRE_ID="$2"; shift 2
                 else
                     ui_error "Flag $1 requires an ID."; exit 1
                 fi ;;
-            --backend)
+            -bk|--backend)
                 if [[ -n "$2" && "$2" != -* ]]; then
                     SNAPSHOT_BACKEND="$2"; shift 2
                 else
@@ -503,7 +503,7 @@ EOF
             -c=*|--changelog=*)
                 show_changelog "${1#*=}"; exit $? ;;
             -c|--changelog)
-                if [[ "$2" =~ ^(--latest|--all|all|current|--current|-h|--help|-V|--version)$ || ( -n "$2" && "$2" != -* ) ]]; then
+                if [[ "$2" =~ ^(-L|--latest|-a|--all|all|-C|current|--current|-u|--unreleased|-h|--help|-V|--version)$ || ( -n "$2" && "$2" != -* ) ]]; then
                     show_changelog "$2"; exit $?
                 else
                     show_changelog; exit $?
@@ -531,13 +531,13 @@ EOF
                 print_help_entry "⏱️" "$C_PURP" "-r,   --rsync" "Force RSYNC snapshot mode."
                 print_help_entry "⚡" "$C_PURP" "-b,   --btrfs" "Force BTRFS snapshot mode."
                 print_help_entry "💾" "$C_PURP" "-sd,  --snapshot-device <dev>" "Override backup device path/UUID."
-                print_help_entry "🔌" "$C_PURP" "--backend <name>" "Select snapshot backend (e.g. snapper, timeshift-btrfs)."
-                print_help_entry "🏷️" "$C_PURP" "--type <type>" "Snapshot type for paired backends (single, pre, post)."
-                print_help_entry "🔗" "$C_PURP" "--pre-id <id>" "Link post-snapshot to pre-snapshot ID."
-                print_help_entry "🤖" "$C_PURP" "--porcelain" "Machine-readable KEY=VALUE output for external IPC."
+                print_help_entry "🔌" "$C_PURP" "-bk,  --backend <name>" "Select snapshot backend (e.g. snapper, timeshift-btrfs)."
+                print_help_entry "🏷️" "$C_PURP" "-t,   --type <type>" "Snapshot type for paired backends (single, pre, post)."
+                print_help_entry "🔗" "$C_PURP" "-pi,  --pre-id <id>" "Link post-snapshot to pre-snapshot ID."
+                print_help_entry "🤖" "$C_PURP" "-p,   --porcelain" "Machine-readable KEY=VALUE output for external IPC."
                 echo ""
                 echo -e "${C_BOLD}General:${C_RESET}"
-                print_help_entry "🔄" "$C_PURP" "-U,   --self-update, --selfupdate" "Update Checkpoint from git repository (add --repair to repair install)."
+                print_help_entry "🔄" "$C_PURP" "-U,   --self-update, --selfupdate" "Update Checkpoint and reinstall (add -r/--repair to repair install)."
                 print_help_entry "📜" "$C_PURP" "-c,   --changelog [ver]" "View release notes or open FZF browser."
                 print_help_entry "ℹ️" "$C_PURP" "-V,   --version" "Print version information and exit."
                 print_help_entry "🔍" "$C_PURP" "-v,   --verbose, --debug" "Enable detailed execution logs."
@@ -548,7 +548,7 @@ EOF
                 print_help_entry "⚙️" "$C_GREEN" "config" "Interactive settings menu."
                 print_help_entry "🔌" "$C_GREEN" "backend, backends" "Interactive backend management and custom wizard."
                 print_help_entry "📜" "$C_GREEN" "changelog [version]" "View changelog or open interactive release notes browser."
-                print_help_entry "🔄" "$C_GREEN" "self-update [--repair]" "Update Checkpoint from git repository (or repair install)."
+                print_help_entry "🔄" "$C_GREEN" "self-update [-r|--repair]" "Update Checkpoint and reinstall (or repair install)."
                 print_help_entry "🗑️" "$C_GREEN" "uninstall [OPTIONS]" "Uninstall per-user Checkpoint installation (see --help)."
                 return 0 ;;
             *) ui_error "Unknown option: $1"; exit 1 ;;

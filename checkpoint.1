@@ -41,16 +41,16 @@ Override protection and delete \fB[KEEP]\fR snapshots during cleanup or deletion
 .BR \-k ", " \-\-keep " \fIN\fR"
 Limit cleanup to keep the last \fIN\fR normal snapshots. Protected snapshots are not counted towards this limit.
 .TP
-.BR \-\-backend " \fINAME\fR"
+.BR \-bk ", " \-\-backend " \fINAME\fR"
 Override snapshot backend driver for this run (e.g. \fBsnapper\fR, \fBtimeshift\-btrfs\fR, \fBtimeshift\-rsync\fR).
 .TP
-.B \-\-porcelain
+.BR \-p ", " \-\-porcelain
 Output strict machine-readable \fBKEY="VALUE"\fR metadata to stdout for IPC with Advance or automated scripts.
 .TP
-.BR \-\-type " \fItype\fR"
+.BR \-t ", " \-\-type " \fItype\fR"
 Snapshot type for paired snapshots: \fBsingle\fR, \fBpre\fR, or \fBpost\fR.
 .TP
-.BR \-\-pre\-id " \fIID\fR"
+.BR \-pi ", " \-\-pre\-id " \fIID\fR"
 Specify pre-snapshot ID when creating a \fBpost\fR snapshot with paired backends (e.g. Snapper).
 .TP
 .BR \-r ", " \-\-rsync
@@ -63,7 +63,7 @@ Force BTRFS snapshot mode.
 Override backup target storage device or partition.
 .TP
 .BR \-U ", " \-\-self\-update ", " \-\-selfupdate
-Update Checkpoint from the git repository and reinstall. Pass \fB\-\-repair\fR to force re\-running the per\-user installer.
+Update Checkpoint and reinstall. Pass \fB\-r\fR or \fB\-\-repair\fR to force re\-running the per\-user installer.
 .TP
 .BR \-c ", " \-\-changelog " [" \fIVERSION\fR "]"
 Display formatted release notes from the changelog. If executed interactively in a terminal without arguments and \fBfzf\fR is available, launches an interactive version browser.
@@ -90,11 +90,11 @@ Launch interactive configuration wizard via \fBfzf\fR to configure snapshot limi
 .BR backend ", " backends
 Launch the interactive backend management dashboard and guided custom backend wizard to create, edit, or switch snapshot drivers.
 .TP
-.BR self\-update ", " selfupdate " [\fB\-\-repair\fR]"
-Pull latest changes from the source git repository and reinstall. Use \fB\-\-repair\fR to reinstall symlinks and manual pages even when the checkout is already up to date.
+.BR self\-update ", " selfupdate " [\fB\-r\fR|\fB\-\-repair\fR]"
+Update Checkpoint and reinstall. Use \fB\-r\fR or \fB\-\-repair\fR to reinstall symlinks and manual pages even when already up to date.
 .TP
-.B uninstall \fR[\fB\-\-purge\fR|\fB\-\-keep\-config\fR] [\fB\-\-dry\-run\fR] [\fB\-y\fR]
-Remove a per\-user Checkpoint installation from \fB~/.local\fR without modifying existing Snapper or Timeshift snapshots. Pass \fB\-\-purge\fR to also remove \fB~/.config/checkpoint\fR.
+.B uninstall \fR[\fB\-p\fR|\fB\-\-purge\fR|\fB\-k\fR|\fB\-\-keep\-config\fR] [\fB\-n\fR|\fB\-\-dry\-run\fR] [\fB\-y\fR|\fB\-\-yes\fR] [\fB\-q\fR|\fB\-\-quiet\fR]
+Remove a per\-user Checkpoint installation from \fB~/.local\fR without modifying existing Snapper or Timeshift snapshots. Pass \fB\-p\fR or \fB\-\-purge\fR to also remove \fB~/.config/checkpoint\fR.
 .SH RETENTION LOGIC
 .B checkpoint
 uses a specialized counting algorithm for cleanup:

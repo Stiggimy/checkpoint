@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
 
+## [0.13.1] — 2026-11-23
+
+### Added
+- **Complete Short-Flag Parity**: Added short flag counterparts for every remaining CLI option and subcommand flag (`-r` for `--repair`, `-bk` for `--backend`, `-t` for `--type`, `-pi` for `--pre-id`, `-p` for `--porcelain`, `-L`/`-C`/`-u`/`-a` for changelog selectors, and `-p`/`-k`/`-n` for `uninstall`).
+
+### Changed
+- **Clearer README Examples**: Reorganized README documentation for plain-language clarity, pairing readable long flags with short shortcuts in Quick Start examples.
+
 ## [0.13.0] — 2026-11-23
 
 ### Added

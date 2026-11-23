@@ -46,30 +46,32 @@ This installs the binary to `/usr/bin/checkpoint`, libraries to `/usr/lib/checkp
 
 ## Quick Start & Examples
 
+> **Tip:** Every flag has both a readable long form and a fast short shortcut (shown in parentheses below) once you are comfortable with the commands.
+
 ```bash
 # Take a quick snapshot (and clean up old ones past your limit)
 checkpoint
 
-# Take a snapshot with a custom description
-checkpoint -m "Before GPU driver update"
+# Take a snapshot with a custom description (short: -m)
+checkpoint --comment "Before GPU driver update"
 
-# Take a protected snapshot that auto-cleanup will never delete
-checkpoint -ks -m "Clean working system"
+# Take a protected snapshot that auto-cleanup will never delete (short: -ks -m)
+checkpoint --keep-snapshot --comment "Clean working system"
 
-# List existing snapshots
-checkpoint -l
+# List existing snapshots (short: -l)
+checkpoint --list
 
-# Search and delete snapshots interactively (requires fzf)
-checkpoint -d
+# Search and delete snapshots interactively (requires fzf) (short: -d)
+checkpoint --delete
 
-# Delete snapshots matching a keyword
-checkpoint -d "kernel"
+# Delete snapshots matching a keyword (short: -d)
+checkpoint --delete "kernel"
 
-# Run cleanup only (keeps your last N normal snapshots + all [KEEP] ones)
-checkpoint -cl
-checkpoint -k 10 -cl           # Temporarily keep 10 normal snapshots instead of default
+# Run cleanup only, keeping your last N normal snapshots + all [KEEP] ones (short: -cl)
+checkpoint --cleanup-only
+checkpoint --keep 10 --cleanup-only  # Temporarily keep 10 normal snapshots (short: -k 10 -cl)
 
-# Check if your snapshot backend is ready
+# Check if your snapshot backend is ready (short: -ch)
 checkpoint check
 
 # Open the interactive settings menu or backend manager
@@ -94,18 +96,18 @@ checkpoint backend
 
 ### Updating
 ```bash
-checkpoint -U                     # Update Checkpoint to the latest version
-checkpoint self-update --repair   # Repair symlinks, libraries, or manual pages if needed
+checkpoint --self-update          # Update Checkpoint to the latest version (short: -U)
+checkpoint self-update --repair   # Repair symlinks, libraries, or manual pages (short: -r)
 ```
 Public installations update using only `curl`/`wget` and `tar` — no `git` or `gh` needed.
 
 ### Uninstalling
 ```bash
-checkpoint uninstall              # Remove Checkpoint cleanly (prompts before touching your config)
-checkpoint uninstall --dry-run    # Preview what would be removed without changing anything
-checkpoint uninstall --keep-config # Keep ~/.config/checkpoint (custom backends & settings)
-checkpoint uninstall --purge      # Also remove ~/.config/checkpoint
-checkpoint uninstall -y           # Skip confirmation prompts (still keeps config unless --purge)
+checkpoint uninstall              # Remove Checkpoint cleanly (prompts before touching config)
+checkpoint uninstall --dry-run    # Preview what would be removed (short: -n)
+checkpoint uninstall --keep-config # Keep ~/.config/checkpoint without prompting (short: -k)
+checkpoint uninstall --purge      # Also remove ~/.config/checkpoint (short: -p)
+checkpoint uninstall --yes        # Skip confirmation prompts (short: -y)
 ```
 **Your existing Snapper or Timeshift snapshots are never touched** during uninstallation.
 
@@ -132,23 +134,23 @@ checkpoint uninstall -y           # Skip confirmation prompts (still keeps confi
 | `-r, --rsync` | Use an RSYNC-based backend for this run | `checkpoint -r` |
 | `-b, --btrfs` | Use a BTRFS-based backend for this run | `checkpoint -b` |
 | `-sd, --snapshot-device <dev>` | Override the target backup partition or filesystem UUID | `checkpoint -sd /dev/sdb1` |
-| `--backend <name>` | Select a specific backend (`snapper`, `timeshift-btrfs`, `timeshift-rsync`) | `checkpoint --backend snapper` |
-| `--type <type>` | Snapshot phase for paired backups (`single`, `pre`, or `post`) | `checkpoint --type pre` |
-| `--pre-id <id>` | Link a `post` snapshot to its matching `pre` snapshot ID | `checkpoint --type post --pre-id 14` |
-| `--porcelain` | Machine-readable `KEY="VALUE"` output for scripts and Advance | `checkpoint --porcelain` |
+| `-bk, --backend <name>` | Select a specific backend (`snapper`, `timeshift-btrfs`, `timeshift-rsync`) | `checkpoint -bk snapper` |
+| `-t, --type <type>` | Snapshot phase for paired backups (`single`, `pre`, or `post`) | `checkpoint -t pre` |
+| `-pi, --pre-id <id>` | Link a `post` snapshot to its matching `pre` snapshot ID | `checkpoint -t post -pi 14` |
+| `-p, --porcelain` | Machine-readable `KEY="VALUE"` output for scripts and Advance | `checkpoint -p` |
 | **General** | | |
-| `-c, --changelog [ver]` | View release notes or open the interactive release browser | `checkpoint -c` |
-| `-U, --self-update, --selfupdate` | Update Checkpoint and reinstall (add `--repair` to repair install) | `checkpoint -U` |
+| `-c, --changelog [ver\|-L\|-C\|-u\|-a]` | View release notes, browser, or latest (`-L`), current (`-C`), upcoming (`-u`), all (`-a`) | `checkpoint -c` |
+| `-U, --self-update, --selfupdate` | Update Checkpoint and reinstall (add `-r`/`--repair` to repair install) | `checkpoint -U` |
 | `-v, --verbose, --debug` | Enable detailed debug output | `checkpoint -v` |
 | `-V, --version` | Print version and build number, then exit | `checkpoint -V` |
 | `-h, --help` | Display command usage and options summary | `checkpoint -h` |
 | **Subcommands** | | |
 | `check` | Check snapshot backend readiness and exit status | `checkpoint check` |
-| `changelog [ver]` | View release notes or open the interactive release browser | `checkpoint changelog` |
+| `changelog [ver\|-L\|-C\|-u\|-a]` | View release notes or open the interactive release browser | `checkpoint changelog` |
 | `config` | Open the interactive settings menu (`fzf`) | `checkpoint config` |
 | `backend, backends` | Open the backend manager and guided custom driver wizard | `checkpoint backend` |
-| `self-update, selfupdate` | Update Checkpoint and reinstall (supports `--repair`) | `checkpoint self-update` |
-| `uninstall` | Remove per-user Checkpoint installation | `checkpoint uninstall` |
+| `self-update, selfupdate [-r\|--repair]` | Update Checkpoint and reinstall (supports `-r`/`--repair`) | `checkpoint self-update` |
+| `uninstall [-p\|-k\|-n\|-y\|-q]` | Remove per-user Checkpoint installation (`--purge`, `--keep-config`, `--dry-run`, `--yes`, `--quiet`) | `checkpoint uninstall` |
 
 ---
 
