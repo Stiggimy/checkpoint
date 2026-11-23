@@ -96,18 +96,18 @@ checkpoint backend
 
 ### Updating
 ```bash
-checkpoint --self-update          # Update Checkpoint to the latest version (short: -U)
-checkpoint self-update --repair   # Repair symlinks, libraries, or manual pages (short: -r)
+checkpoint --self-update         # Update Checkpoint to the latest version (short: -U)
+checkpoint self-update --repair  # Repair symlinks, libraries, or manual pages (short: -r)
 ```
 Public installations update using only `curl`/`wget` and `tar` — no `git` or `gh` needed.
 
 ### Uninstalling
 ```bash
-checkpoint uninstall              # Remove Checkpoint cleanly (prompts before touching config)
-checkpoint uninstall --dry-run    # Preview what would be removed (short: -n)
-checkpoint uninstall --keep-config # Keep ~/.config/checkpoint without prompting (short: -k)
-checkpoint uninstall --purge      # Also remove ~/.config/checkpoint (short: -p)
-checkpoint uninstall --yes        # Skip confirmation prompts (short: -y)
+checkpoint uninstall                # Remove Checkpoint cleanly (prompts before touching config)
+checkpoint uninstall --dry-run      # Preview what would be removed (short: -n)
+checkpoint uninstall --keep-config  # Keep ~/.config/checkpoint without prompting (short: -k)
+checkpoint uninstall --purge        # Also remove ~/.config/checkpoint (short: -p)
+checkpoint uninstall --yes          # Skip confirmation prompts (short: -y)
 ```
 **Your existing Snapper or Timeshift snapshots are never touched** during uninstallation.
 
