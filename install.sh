@@ -1,7 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-# --- checkpoint Installer ---
+# --- checkpoint Installer (per-user, XDG-aware) ---
+#
+# Installs into the XDG base directories when they are set:
+#   binaries   -> ~/.local/bin (no XDG equivalent)
+#   libraries  -> $XDG_DATA_HOME/checkpoint/lib (plus ~/.local/lib/checkpoint symlink)
+#   catalog    -> $XDG_DATA_HOME/checkpoint/catalog
+#   man page   -> $XDG_DATA_HOME/man/man1
+#   config     -> $XDG_CONFIG_HOME/checkpoint
+#
+# For a system-wide install use the PKGBUILD (makepkg -si) instead.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+: "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+
+BIN_DIR="$HOME/.local/bin"
+MAN_DIR="$XDG_DATA_HOME/man/man1"
+DATA_DIR="${CHECKPOINT_DATA_DIR:-$XDG_DATA_HOME/checkpoint}"
+LIB_DIR="$DATA_DIR/lib"
+LEGACY_LIB_DIR="$HOME/.local/lib/checkpoint"
+CATALOG_DIR="$DATA_DIR/catalog"
+CONFIG_DIR="${CHECKPOINT_CONFIG_DIR:-$XDG_CONFIG_HOME/checkpoint}"
+BACKENDS_DIR="$CONFIG_DIR/backends.d"
 
 QUIET=false
 for arg in "$@"; do
@@ -10,8 +34,11 @@ for arg in "$@"; do
     esac
 done
 
-BIN_DIR="$HOME/.local/bin"
-MAN_DIR="$HOME/.local/share/man/man1"
+# Ensure standard user tool directories are in PATH during installation
+for _p in "$HOME/.local/bin"; do
+    [[ -d "$_p" && ":$PATH:" != *":$_p:"* ]] && PATH="$_p:$PATH"
+done
+unset _p
 
 # Color Setup (with compatibility check)
 RED=""; GREEN=""; YELLOW=""; BLUE=""; BOLD=""; RESET=""
@@ -25,24 +52,30 @@ fi
 
 [ "$QUIET" != true ] && echo "${BLUE}>>> [Phase: Installation] Setting up Checkpoint...${RESET}"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Replace a real file/directory with a symlink, keeping a backup of user data.
+link_path() {
+    local src="$1" dest="$2"
+    if [[ -e "$dest" && ! -L "$dest" ]]; then
+        local backup="${dest}.bak.$(date +%Y%m%d%H%M%S)"
+        mv "$dest" "$backup"
+        [ "$QUIET" != true ] && echo "  ${YELLOW}[BACKUP]${RESET} $dest -> $backup"
+    fi
+    mkdir -p "$(dirname "$dest")"
+    ln -sfn "$src" "$dest"
+}
 
 # Ensure directories exist
-mkdir -p "$BIN_DIR"
-mkdir -p "$MAN_DIR"
-mkdir -p "$HOME/.local/lib"
-mkdir -p "$HOME/.local/share/checkpoint"
-mkdir -p "$HOME/.config/checkpoint/backends.d"
+mkdir -p "$BIN_DIR" "$MAN_DIR" "$DATA_DIR" "$HOME/.local/lib" "$BACKENDS_DIR"
 
 # Copy / link files
-ln -sf "$SCRIPT_DIR/checkpoint" "$BIN_DIR/checkpoint"
-ln -sfn "$SCRIPT_DIR/lib" "$HOME/.local/lib/checkpoint"
-ln -sfn "$SCRIPT_DIR/catalog" "$HOME/.local/share/checkpoint/catalog"
-[ -f "$SCRIPT_DIR/CHANGELOG.md" ] && ln -sf "$SCRIPT_DIR/CHANGELOG.md" "$HOME/.local/share/checkpoint/CHANGELOG.md"
+link_path "$SCRIPT_DIR/checkpoint" "$BIN_DIR/checkpoint"
+link_path "$SCRIPT_DIR/lib" "$LIB_DIR"
+link_path "$SCRIPT_DIR/lib" "$LEGACY_LIB_DIR"
+link_path "$SCRIPT_DIR/catalog" "$CATALOG_DIR"
+[ -f "$SCRIPT_DIR/CHANGELOG.md" ] && link_path "$SCRIPT_DIR/CHANGELOG.md" "$DATA_DIR/CHANGELOG.md"
 cp "$SCRIPT_DIR/checkpoint.1" "$MAN_DIR/checkpoint.1"
 
-# Auto-enroll active backend into ~/.config/checkpoint/backends.d/
-BACKENDS_DIR="$HOME/.config/checkpoint/backends.d"
+# Auto-enroll active backend into $CONFIG_DIR/backends.d/
 if ! find -L "$BACKENDS_DIR" -type f -name "*.conf" 2>/dev/null | grep -q .; then
     # Auto-detect best backend (snapper -> timeshift-btrfs -> timeshift-rsync)
     target_backend=""
@@ -54,7 +87,7 @@ if ! find -L "$BACKENDS_DIR" -type f -name "*.conf" 2>/dev/null | grep -q .; the
         target_backend="timeshift-rsync"
     fi
     if [ -n "$target_backend" ] && [ -f "$SCRIPT_DIR/catalog/backends/${target_backend}.conf" ]; then
-        ln -sf "$HOME/.local/share/checkpoint/catalog/backends/${target_backend}.conf" "$BACKENDS_DIR/${target_backend}.conf"
+        ln -sf "$CATALOG_DIR/backends/${target_backend}.conf" "$BACKENDS_DIR/${target_backend}.conf"
         [ "$QUIET" != true ] && echo "  ${GREEN}[ENROLL]${RESET} Default backend: ${target_backend} (symlinked to catalog)"
     elif [ "$QUIET" != true ]; then
         echo "  ${YELLOW}[INFO]${RESET} No snapshot backend detected. Install Timeshift or Snapper to enable snapshots."
@@ -67,16 +100,17 @@ chmod +x "$BIN_DIR/checkpoint"
 if [ "$QUIET" != true ]; then
     echo "${GREEN}[OK] Checkpoint installed successfully!${RESET}"
     echo "   - Binary: $BIN_DIR/checkpoint"
-    echo "   - Libraries: $HOME/.local/lib/checkpoint"
-    echo "   - Catalog: $HOME/.local/share/checkpoint/catalog"
-    echo "   - Changelog: $HOME/.local/share/checkpoint/CHANGELOG.md"
-    echo "   - Backends: $HOME/.config/checkpoint/backends.d/"
+    echo "   - Libraries: $LIB_DIR"
+    echo "   - Catalog: $CATALOG_DIR"
+    echo "   - Changelog: $DATA_DIR/CHANGELOG.md"
+    echo "   - Backends: $BACKENDS_DIR/"
     echo "   - Manual: $MAN_DIR/checkpoint.1"
     echo ""
 fi
+
 # Auto-install fzf if missing
 if ! command -v fzf >/dev/null 2>&1 && [ ! -x "$BIN_DIR/fzf" ] && [ ! -x "$HOME/.local/bin/fzf" ] && [ ! -x "$HOME/.fzf/bin/fzf" ]; then
-    echo "${BLUE}>>> [Phase: Dependencies] Installing fzf...${RESET}"
+    [ "$QUIET" != true ] && echo "${BLUE}>>> [Phase: Dependencies] Installing fzf...${RESET}"
     for cat_conf in "$HOME/.local/share/advance/catalog/managers/system/"*.conf "$SCRIPT_DIR/../advance/catalog/managers/system/"*.conf; do
         [ -f "$cat_conf" ] || continue
         req=$(grep '^REQUIRES_CMD=' "$cat_conf" 2>/dev/null | head -1 | cut -d'=' -f2-)
@@ -89,7 +123,7 @@ if ! command -v fzf >/dev/null 2>&1 && [ ! -x "$BIN_DIR/fzf" ] && [ ! -x "$HOME/
                 if [[ "$inst_cmd" == *sudo* ]] && ! sudo -n true 2>/dev/null && [ ! -t 0 ]; then
                     continue
                 fi
-                echo "  ${GREEN}[INSTALL]${RESET} Installing fzf via $req ($inst_cmd fzf)..."
+                [ "$QUIET" != true ] && echo "  ${GREEN}[INSTALL]${RESET} Installing fzf via $req ($inst_cmd fzf)..."
                 if eval "$inst_cmd fzf"; then
                     break
                 fi
@@ -99,7 +133,7 @@ if ! command -v fzf >/dev/null 2>&1 && [ ! -x "$BIN_DIR/fzf" ] && [ ! -x "$HOME/
 
     # Fallback: official fzf binary via git installer if package manager fails
     if ! command -v fzf >/dev/null 2>&1 && [ ! -x "$BIN_DIR/fzf" ]; then
-        echo "  ${YELLOW}[INFO]${RESET} Attempting user-level fallback installation of fzf..."
+        [ "$QUIET" != true ] && echo "  ${YELLOW}[INFO]${RESET} Attempting user-level fallback installation of fzf..."
         fzf_dir="$HOME/.fzf"
         if command -v git >/dev/null 2>&1; then
             if [ ! -d "$fzf_dir" ]; then
@@ -115,19 +149,24 @@ if ! command -v fzf >/dev/null 2>&1 && [ ! -x "$BIN_DIR/fzf" ] && [ ! -x "$HOME/
         fi
     fi
 
-    if command -v fzf >/dev/null 2>&1; then
-        [ "$QUIET" != true ] && echo "  ${GREEN}[OK]${RESET} fzf installed successfully: $(fzf --version 2>/dev/null | head -1)"
-    else
-        [ "$QUIET" != true ] && echo "${YELLOW}[WARN] Could not install 'fzf' automatically. Interactive menus need it.${RESET}"
+    if [ "$QUIET" != true ]; then
+        if command -v fzf >/dev/null 2>&1; then
+            echo "  ${GREEN}[OK]${RESET} fzf installed successfully: $(fzf --version 2>/dev/null | head -1)"
+        else
+            echo "${YELLOW}[WARN] Could not install 'fzf' automatically. Interactive menus need it.${RESET}"
+        fi
+        echo ""
     fi
-    [ "$QUIET" != true ] && echo ""
 fi
 
-# Ensure ~/.local/bin is in ~/.bashrc for login and non-login shells (essential for WSL)
-if [[ -f "$HOME/.bashrc" ]] && ! grep -q '\.local/bin' "$HOME/.bashrc" 2>/dev/null; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-    [ "$QUIET" != true ] && echo "  ${GREEN}[CONFIG]${RESET} Added ~/.local/bin to ~/.bashrc for WSL non-login shells."
-fi
+# Ensure ~/.local/bin is in ~/.bashrc / ~/.zshrc for login and non-login shells
+for _rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+    if [[ -f "$_rc" ]] && ! grep -q '\.local/bin' "$_rc" 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$_rc"
+        [ "$QUIET" != true ] && echo "  ${GREEN}[CONFIG]${RESET} Added ~/.local/bin to $_rc."
+    fi
+done
+unset _rc
 
 if [ "$QUIET" != true ]; then
     if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then

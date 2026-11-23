@@ -11,6 +11,7 @@ manage_config() {
     local init_device=$SNAPSHOT_DEVICE
     local init_backend=$SNAPSHOT_BACKEND
     local init_self_update_check=$SELF_UPDATE_CHECK
+    local init_stall_timeout=$STALL_TIMEOUT
     local last_idx=0
     local prev_changelog
     prev_changelog=$(cat <<EOF
@@ -46,6 +47,8 @@ EOF
         local s_backend="[$SNAPSHOT_BACKEND]"
         local s_dev="[${SNAPSHOT_DEVICE:-default}]"
         local s_ret="[$AUTO_RETRIES]"
+        local s_stall="[OFF]"
+        [[ -n "$STALL_TIMEOUT" && "$STALL_TIMEOUT" =~ ^[0-9]+$ && "$STALL_TIMEOUT" -gt 0 ]] && s_stall="[${STALL_TIMEOUT}s]"
         local s_inf="[OFF]"; [[ "$INFINITE_RETRIES" == true ]] && s_inf="[ON ]"
         local s_upd="[${SELF_UPDATE_CHECK^^}]"
 
@@ -60,6 +63,7 @@ EOF
             "$(e 💾)Target Backup Device        $s_dev"
             "--- ERROR HANDLING ---"
             "$(e 🔟)Auto-Retries Limit          $s_ret"
+            "$(e ⏱️)Stalled Operation Watchdog   $s_stall"
             "$(e ♾️)Infinite Retries Mode       $s_inf"
             "$(e 🔄)Self-Update Check           $s_upd"
             "--- VISUAL STYLING ---"
@@ -99,6 +103,8 @@ EOF
                     echo -e "💾 Target Backup Device\n───────────────────────\nOverride the partition or external drive used to store snapshots (e.g. /dev/sdb1 or UUID).\n\nLeave blank/default to use your primary system partition or Timeshift default drive." ;;
                 *Auto-Retries*)
                     echo -e "🔟 Auto-Retries Limit\n─────────────────────\nNumber of times failed snapshot operations will be silently retried before prompting the user.\n\nDefault: 1" ;;
+                *Stalled*Watchdog*|*Stalled*Operation*)
+                    echo -e "⏱️ Stalled Operation Watchdog (STALL_TIMEOUT)\n─────────────────────────────────────────────\nMonitors snapshot commands for output activity and triggers a stall alert if no progress is made for this timeframe.\n\n• If a snapshot freezes (e.g. filesystem lock or hung driver), Checkpoint alerts you with an audible bell and prompt:\n    [W] Wait (extend time) | [T] Terminate & Escalate | [A] Abort\n\nDefault: 0 (disabled)" ;;
                 *Infinite*)
                     echo -e "♾️ Infinite Retries Mode\n────────────────────────\nIf enabled, snapshot commands loop endlessly until success (useful for unattended backup jobs on flaky hardware).\n\nDefault: false" ;;
                 *Self-Update*)
@@ -148,6 +154,27 @@ EOF
                 read -p "Enter retry limit (0 for always ask, current: $AUTO_RETRIES): " input_retries
                 input_retries=$(trim "$input_retries")
                 [[ "$input_retries" =~ ^[0-9]+$ ]] && AUTO_RETRIES="$input_retries" ;;
+            *"Stalled Operation Watchdog"*)
+                local cur_st_disp="0 (disabled)"
+                [[ -n "$STALL_TIMEOUT" && "$STALL_TIMEOUT" =~ ^[0-9]+$ && "$STALL_TIMEOUT" -gt 0 ]] && cur_st_disp="${STALL_TIMEOUT}s"
+                echo "Enter default inactivity timeout (e.g. 180s, 3m, 0 to disable) [current: $cur_st_disp]:"
+                local input_st
+                read -r input_st
+                input_st=$(trim "$input_st")
+                if [[ "$input_st" == "0" || "$input_st" == "off" || "$input_st" == "disable"* ]]; then
+                    STALL_TIMEOUT=0
+                    ui_ok "Stalled operation watchdog disabled."
+                elif [[ -n "$input_st" ]]; then
+                    local parsed_st
+                    parsed_st=$(parse_duration "$input_st")
+                    if [[ "$parsed_st" =~ ^[0-9]+$ ]]; then
+                        STALL_TIMEOUT="$parsed_st"
+                        ui_ok "Stalled operation watchdog set to ${STALL_TIMEOUT}s."
+                    else
+                        ui_warn "Invalid duration format. Example: 180s, 3m, 300."
+                    fi
+                fi
+                ;;
             *"Infinite Retries Mode"*) [[ "$INFINITE_RETRIES" == true ]] && INFINITE_RETRIES=false || INFINITE_RETRIES=true ;;
             *"Self-Update Check"*)
                 local modes=(
@@ -190,6 +217,7 @@ EOF
                 SNAPSHOT_DEVICE=$init_device
                 SNAPSHOT_BACKEND=$init_backend
                 SELF_UPDATE_CHECK=$init_self_update_check
+                STALL_TIMEOUT=$init_stall_timeout
                 ui_info "Changes discarded."; break ;;
             *) continue ;;
         esac

@@ -18,8 +18,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ==============================================================================
 
-VERSION="0.12.1"
-BUILD="122"
+VERSION="0.13.0"
+BUILD="126"
 
 # Auto-detect source directory (handles symlinks seamlessly)
 detect_source_dir() {
@@ -43,17 +43,27 @@ for _p in "$HOME/.local/bin"; do
 done
 unset _p
 
-# Resolve library directory (local repo, ~/.local/lib/checkpoint, or /usr/lib/checkpoint)
+# Resolve XDG data directory (honours the user's environment)
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+_chk_data_dir="${CHECKPOINT_DATA_DIR:-$XDG_DATA_HOME/checkpoint}"
+
+# Resolve library directory (source checkout, XDG data dir, legacy per-user
+# install, or a system-wide package install)
 if [[ -d "$SOURCE_DIR/lib" ]]; then
     LIB_DIR="$SOURCE_DIR/lib"
+elif [[ -d "$_chk_data_dir/lib" ]]; then
+    LIB_DIR="$_chk_data_dir/lib"
 elif [[ -d "$HOME/.local/lib/checkpoint" ]]; then
     LIB_DIR="$HOME/.local/lib/checkpoint"
 elif [[ -d "/usr/lib/checkpoint" ]]; then
     LIB_DIR="/usr/lib/checkpoint"
+elif [[ -d "/usr/share/checkpoint/lib" ]]; then
+    LIB_DIR="/usr/share/checkpoint/lib"
 else
     echo "ERROR: Could not locate Checkpoint library directory (lib/)." >&2
     exit 1
 fi
+unset _chk_data_dir
 
 # Load core modules
 source "$LIB_DIR/core.sh"

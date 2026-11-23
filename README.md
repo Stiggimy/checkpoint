@@ -19,7 +19,23 @@ Checkpoint is a powerful snapshot management tool supporting Snapper and Timeshi
 
 ## Installation
 
-### Automatic (Recommended)
+### Recommended (One-Line Public Installer)
+
+For a per-user Linux install requiring only standard tools (`bash`, `tar`, and `curl` or `wget` — no `git` or `gh` needed), run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Stiggimy/checkpoint/master/bootstrap.sh | bash
+```
+
+Or download and inspect it first:
+
+```bash
+curl -fsSL --max-time 30 https://raw.githubusercontent.com/Stiggimy/checkpoint/master/bootstrap.sh -o checkpoint-bootstrap.sh && bash checkpoint-bootstrap.sh
+```
+
+New installations keep their source files in `$CHECKPOINT_DATA_DIR/source` (default `~/.local/share/checkpoint/source`). Run `checkpoint -U` for routine updates (zero-dependency tarball updates for public installs, or fast-forward `git pull` for `.git` checkouts). If an older updater hangs or installation was interrupted, run the bootstrap command again or run `checkpoint self-update --repair`. Downloads default to a 30-second timeout; set `SELF_UPDATE_TIMEOUT=120s` for slower connections.
+
+### Manual Git Install
 Clone the repository and run the installation script:
 ```bash
 git clone https://github.com/Stiggimy/checkpoint.git
@@ -44,6 +60,28 @@ The package installs the binary to `/usr/bin/checkpoint`, libraries to `/usr/lib
 2. Install `fzf` (for interactive menus).
 3. Copy the `checkpoint` script to your `PATH` (e.g., `~/.local/bin/`).
 4. Copy `checkpoint.1` to your man directory (e.g., `~/.local/share/man/man1/`).
+
+### Uninstallation
+
+Remove a per-user Checkpoint installation safely at any time:
+
+```bash
+checkpoint uninstall
+```
+
+Or directly from a repository checkout:
+
+```bash
+./uninstall.sh
+```
+
+Useful flags:
+- `--dry-run`: Preview everything that would be removed without changing files.
+- `--keep-config`: Preserve `~/.config/checkpoint` (including custom backends) without prompting.
+- `--purge`: Also remove `~/.config/checkpoint` and custom backend recipes.
+- `-y, --yes`: Skip confirmation prompts (preserves config unless `--purge` is passed).
+
+Your existing system snapshots (Snapper or Timeshift) are **never** touched during uninstallation. If you installed via a system package manager (such as `makepkg -si`), remove it with your package manager (e.g., `sudo pacman -R checkpoint-git`).
 
 ## Backend Driver Architecture
 
@@ -86,6 +124,7 @@ Checkpoint settings can be managed interactively via `checkpoint config` or by e
 - `ALWAYS_CREATE`: Automatically create a snapshot when invoked without flags (`true` or `false`).
 - `ALWAYS_CLEANUP`: Automatically prune snapshots exceeding limit when invoked without flags (`true` or `false`).
 - `AUTO_RETRIES`: Number of automatic retries before prompting the user (Default: `1`).
+- `STALL_TIMEOUT`: Inactivity watchdog timeout in seconds (Default: `0` = disabled).
 - `INFINITE_RETRIES`: Retry failed snapshot operations continuously (`true` or `false`).
 - `SNAPSHOT_DEVICE`: Target partition or device UUID for snapshots.
 - `SELF_UPDATE_CHECK`: Automatic self-update detector mode (`prompt`, `notify`, `auto`, `off`; Default: `prompt`).
@@ -146,7 +185,7 @@ checkpoint backend
 | `--pre-id <id>` | Link post-snapshot to preceding pre-snapshot ID | `checkpoint --type post --pre-id 14` |
 | `--porcelain` | Machine-readable `KEY="VALUE"` output for automated IPC | `checkpoint --porcelain` |
 | `-c, --changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint -c` |
-| `-U, --self-update, --selfupdate` | Pull latest updates from local git repository and reinstall | `checkpoint -U` |
+| `-U, --self-update, --selfupdate` | Update Checkpoint and reinstall (`--repair` to repair install) | `checkpoint -U` |
 | `-v, --verbose, --debug` | Enable detailed execution debug logs | `checkpoint -v` |
 | `-V, --version` | Print version information and exit | `checkpoint -V` |
 | `-h, --help` | Display command usage and options summary | `checkpoint -h` |
@@ -155,7 +194,12 @@ checkpoint backend
 | `changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint changelog` |
 | `config` | Interactive settings and configuration wizard via `fzf` | `checkpoint config` |
 | `backend, backends` | Interactive backend management & custom snapshot driver wizard | `checkpoint backend` |
-| `self-update, selfupdate` | Pull latest updates from local git repository and reinstall | `checkpoint self-update` / `checkpoint selfupdate` |
+| `self-update, selfupdate` | Update Checkpoint and reinstall (supports `--repair`) | `checkpoint self-update` / `checkpoint self-update --repair` |
+| `uninstall` | Remove per-user Checkpoint installation (supports `--purge`, `--keep-config`, `--dry-run`) | `checkpoint uninstall` |
+
+Public installations created with `bootstrap.sh` update automatically using only `curl`/`wget` and `tar` (no `git` or `gh` required). Git checkouts pull the current branch from the configured `origin` without rewriting remotes; public HTTPS clones bypass local credential helpers automatically so stalled helpers (such as GitHub CLI) cannot block updates, while private checkouts use configured HTTPS credentials or non-interactive SSH. Self-update serializes runs with `flock`, offers an interactive auto-stash prompt for uncommitted tracked changes in Git checkouts, and cancels cleanly on Ctrl+C.
+
+Network operations time out after 30 seconds by default (`SELF_UPDATE_TIMEOUT=120s` for slower connections). If installation fails after downloading, or if any installed symlinks/man pages are missing, `checkpoint self-update` (or `checkpoint self-update --repair`) automatically repairs the installation.
 
 See `man checkpoint` for full documentation.
 

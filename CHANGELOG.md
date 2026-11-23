@@ -8,8 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+- **Express & Comprehensive Wizard Overhaul**: Two-tier wizard architecture (Express vs Comprehensive) with maximum field auto-inference, ultra-plain non-technical guidance for manual fields, and graceful premature exit protection (Save Partial Draft, Discard, or Continue).
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
+
+## [0.13.0] — 2026-11-23
+
+### Added
+- **Smart Stalled-Operation Timeout & Watchdog Supervisor (`STALL_TIMEOUT`)**: Added output activity watchdog monitoring to snapshot creation and deletion operations. If a snapshot command hangs (e.g. subvolume locks or unhandled driver freezes) with no output produced for the configured duration (`STALL_TIMEOUT`), Checkpoint alerts the user with an audible bell and provides an interactive prompt: `[W]ait` (extend timeout), `[T]erminate` (cleanly kill process tree and open retry/edit escalation menu), or `[A]bort`.
+- **Watchdog Configuration Setting**: Added interactive configuration for `STALL_TIMEOUT` in `checkpoint config` under Error Handling.
+- **Standalone Zero-Dependency Public Installer (`bootstrap.sh`) & Tarball Self-Update**: Added a one-line standalone public installer and self-update path that require only `bash`, `tar`, and `curl` or `wget` (no `git` or `gh` needed), while preserving Git-based fast-forward updates for `.git` checkouts. Supports fresh installation into XDG data directories, dangling symlink recovery, and safe repair of interrupted installs.
+- **Clean Uninstaller (`uninstall.sh` / `checkpoint uninstall`)**: Added a dedicated per-user uninstaller supporting `--dry-run`, `--keep-config`, `--purge`, and `-y`/`--yes`, while preserving existing Snapper/Timeshift snapshots and custom backend recipes by default.
+- **Self-Update Locking, Auto-Repair & `--repair`**: Added `flock` concurrency locking to self-update and background checks, automatic detection and repair of missing symlinks or man pages, diverged-branch recovery guidance, and an explicit `checkpoint self-update --repair` flag.
+- **XDG-Aware Installer & Zsh PATH Setup**: Updated `install.sh` and `checkpoint` entrypoint to honor `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `CHECKPOINT_DATA_DIR`, back up real files before symlinking, and configure `~/.local/bin` in `~/.zshrc` as well as `~/.bashrc`.
+
+### Fixed
+- **Incomplete Self-Update Installation Recovery**: Remember a failed installation after a successful Git pull and retry it on the next self-update, instead of incorrectly treating the update as complete.
+- **Self-Update Cancellation and Local Work Protection**: Ctrl+C stops Git and its helper processes promptly. Self-update refuses detached HEADs, missing origin, and invalid Git checkouts before pulling; failures retain their exit status. Interactive runs offer automatic stashing when uncommitted tracked changes exist, while non-interactive runs refuse safely.
+- **Self-Update Connectivity and Authentication Errors**: Public HTTPS installations automatically bypass local credential helpers so stalled helpers (such as GitHub CLI) cannot block updates; private checkouts retain configured HTTPS/SSH authentication with clear recovery guidance and bounded timeouts.
+- **Self-Update Source Preservation**: Self-update keeps the configured origin unchanged and shows the source checkout and origin branch before pulling.
 
 ## [0.12.1] — 2026-11-03
 
