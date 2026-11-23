@@ -1,93 +1,182 @@
 # Checkpoint
 
-**Universal System Snapshot Manager**
+**Simple, safe system snapshots for Linux.**
 
-Checkpoint is a powerful snapshot management tool supporting Snapper and Timeshift (BTRFS and RSYNC). It is designed for maximum safety and efficiency in system state archival.
+Checkpoint creates, protects, lists, and cleans up system snapshots using **Snapper** or **Timeshift** (BTRFS and RSYNC). Use it on its own anytime before risky changes, or let [`advance`](https://github.com/Stiggimy/advance) run it automatically before and after system updates.
 
-## Features
-
-- 🔌 **Modular Pluggable Backends:** Pluggable backend architecture supporting **Snapper** (`snapper`), **Timeshift BTRFS** (`timeshift-btrfs`), and **Timeshift RSYNC** (`timeshift-rsync`) via declarative recipe plugins.
-- 🤖 **Standardized `--porcelain` IPC Contract:** Emits strict `KEY="VALUE"` metadata blocks for universal coordination with [`advance`](https://github.com/Stiggimy/advance) and bootloader hooks.
-- 🔒 **Infinite Retention [KEEP]:** Use the `-ks` flag to mark snapshots as protected. They will stay on your disk forever and won't count toward your rotation limit.
-- 🧹 **Robust Cleanup:** An advanced counting algorithm that ensures you always have exactly $N$ fresh normal snapshots, regardless of how many protected ones you have.
-- 🗑️ **Interactive Deletion:** Use `checkpoint -d` to browse and delete snapshots via an interactive `fzf` menu.
-- ⚡ **Auto-Discovery & Probing:** Automatically selects the best available snapshot backend on your system or respects manual overrides.
-- 🧙 **Custom Backend Wizard:** Guided step-by-step setup (`checkpoint backend`) to create, test, and manage custom snapshot drivers (ZFS, BTRFS, RSYNC, LVM, or custom scripts).
-- 🔁 **Interactive Error Escalation:** Escalation prompt on snapshot failures offering `[R]etry`, `[E]dit` (tweaking snapshot flags interactively on the fly via Readline), `[S]kip`, and `[A]bort`.
-- 🔄 **Smart Self-Update Detector:** Background cached check against upstream tracking branch with interactive prompt, notification, or auto-update modes.
-- 🎨 **Visual Engine:** Supports configurable Emojis and Colors.
+---
 
 ## Installation
 
-### Recommended (One-Line Public Installer)
+### Quick Install (Recommended)
 
-For a per-user Linux install requiring only standard tools (`bash`, `tar`, and `curl` or `wget` — no `git` or `gh` needed), run:
+Install Checkpoint in one command (requires only `bash`, `tar`, and `curl` or `wget` — no `git` or `gh` needed):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Stiggimy/checkpoint/master/bootstrap.sh | bash
 ```
 
-Or download and inspect it first:
+<details>
+<summary><strong>Other install methods (Inspect script first, Manual Git clone, Arch Linux PKGBUILD)</strong></summary>
 
+#### Download and inspect before running
 ```bash
 curl -fsSL --max-time 30 https://raw.githubusercontent.com/Stiggimy/checkpoint/master/bootstrap.sh -o checkpoint-bootstrap.sh && bash checkpoint-bootstrap.sh
 ```
 
-New installations keep their source files in `$CHECKPOINT_DATA_DIR/source` (default `~/.local/share/checkpoint/source`). Run `checkpoint -U` for routine updates (zero-dependency tarball updates for public installs, or fast-forward `git pull` for `.git` checkouts). If an older updater hangs or installation was interrupted, run the bootstrap command again or run `checkpoint self-update --repair`. Downloads default to a 30-second timeout; set `SELF_UPDATE_TIMEOUT=120s` for slower connections.
-
-### Manual Git Install
-Clone the repository and run the installation script:
+#### Manual Git install
 ```bash
 git clone https://github.com/Stiggimy/checkpoint.git
 cd checkpoint
 ./install.sh
 ```
 
-### Arch Linux (PKGBUILD)
-
-A VCS `PKGBUILD` is included for a system-wide install. It builds `checkpoint-git` from the latest commit on `master`, so rebuilding the package picks up new commits:
-
+#### Arch Linux (PKGBUILD)
+Build and install system-wide (`checkpoint-git`, tracking `master`):
 ```bash
 git clone https://github.com/Stiggimy/checkpoint.git
 cd checkpoint
 makepkg -si
 ```
+This installs the binary to `/usr/bin/checkpoint`, libraries to `/usr/lib/checkpoint`, the catalog to `/usr/share/checkpoint/catalog`, and the manual to `/usr/share/man/man1`.
 
-The package installs the binary to `/usr/bin/checkpoint`, libraries to `/usr/lib/checkpoint`, the catalog to `/usr/share/checkpoint/catalog`, and the manual to `/usr/share/man/man1`. It provides `checkpoint` and conflicts with a non-VCS `checkpoint` package.
+</details>
 
-### Manual
-1. Install `timeshift` or `snapper`.
-2. Install `fzf` (for interactive menus).
-3. Copy the `checkpoint` script to your `PATH` (e.g., `~/.local/bin/`).
-4. Copy `checkpoint.1` to your man directory (e.g., `~/.local/share/man/man1/`).
+---
 
-### Uninstallation
-
-Remove a per-user Checkpoint installation safely at any time:
+## Quick Start & Examples
 
 ```bash
-checkpoint uninstall
+# Take a quick snapshot (and clean up old ones past your limit)
+checkpoint
+
+# Take a snapshot with a custom description
+checkpoint -m "Before GPU driver update"
+
+# Take a protected snapshot that auto-cleanup will never delete
+checkpoint -ks -m "Clean working system"
+
+# List existing snapshots
+checkpoint -l
+
+# Search and delete snapshots interactively (requires fzf)
+checkpoint -d
+
+# Delete snapshots matching a keyword
+checkpoint -d "kernel"
+
+# Run cleanup only (keeps your last N normal snapshots + all [KEEP] ones)
+checkpoint -cl
+checkpoint -k 10 -cl           # Temporarily keep 10 normal snapshots instead of default
+
+# Check if your snapshot backend is ready
+checkpoint check
+
+# Open the interactive settings menu or backend manager
+checkpoint config
+checkpoint backend
 ```
 
-Or directly from a repository checkout:
+---
 
+## What Checkpoint Does
+
+- 🔌 **Works with Snapper & Timeshift:** Automatically detects and uses the best snapshot tool on your system (`snapper`, `timeshift-btrfs`, or `timeshift-rsync`), or lets you add custom drivers (ZFS, LVM, custom scripts).
+- 🔒 **Protected snapshots (`[KEEP]`):** Mark snapshots you never want to lose with `-ks`. Cleanup skips them permanently and does **not** count them against your normal snapshot limit.
+- 🧹 **Smart rotation cleanup:** Ensures you always keep your newest `N` normal snapshots (default: `6`), regardless of how many `[KEEP]` snapshots you save.
+- 🗑️ **Interactive deletion:** Browse, preview, and delete snapshots from an interactive `fzf` menu (`checkpoint -d`) or match by text.
+- 🔁 **Error recovery & freeze detection:** If a snapshot command fails or freezes silently, Checkpoint alerts you and lets you `[R]etry`, `[E]dit` the command on the fly, `[W]ait`, `[S]kip`, or `[A]bort`.
+- 🤖 **Pairs seamlessly with Advance:** Coordinates paired before-and-after snapshots automatically when running `advance`.
+
+---
+
+## Updating & Uninstalling
+
+### Updating
 ```bash
-./uninstall.sh
+checkpoint -U                     # Update Checkpoint to the latest version
+checkpoint self-update --repair   # Repair symlinks, libraries, or manual pages if needed
 ```
+Public installations update using only `curl`/`wget` and `tar` — no `git` or `gh` needed.
 
-Useful flags:
-- `--dry-run`: Preview everything that would be removed without changing files.
-- `--keep-config`: Preserve `~/.config/checkpoint` (including custom backends) without prompting.
-- `--purge`: Also remove `~/.config/checkpoint` and custom backend recipes.
-- `-y, --yes`: Skip confirmation prompts (preserves config unless `--purge` is passed).
+### Uninstalling
+```bash
+checkpoint uninstall              # Remove Checkpoint cleanly (prompts before touching your config)
+checkpoint uninstall --dry-run    # Preview what would be removed without changing anything
+checkpoint uninstall --keep-config # Keep ~/.config/checkpoint (custom backends & settings)
+checkpoint uninstall --purge      # Also remove ~/.config/checkpoint
+checkpoint uninstall -y           # Skip confirmation prompts (still keeps config unless --purge)
+```
+**Your existing Snapper or Timeshift snapshots are never touched** during uninstallation.
 
-Your existing system snapshots (Snapper or Timeshift) are **never** touched during uninstallation. If you installed via a system package manager (such as `makepkg -si`), remove it with your package manager (e.g., `sudo pacman -R checkpoint-git`).
+*(If you installed Checkpoint via your distro's package manager such as `makepkg -si`, update or remove it with your package manager instead, e.g. `sudo pacman -R checkpoint-git`.)*
 
-## Backend Driver Architecture
+---
 
-Checkpoint is built on a 100% declarative backend engine. Snapshot backends are defined in `.conf` recipes stored in the official catalog (`catalog/backends/`) or in your user configuration directory (`~/.config/checkpoint/backends.d/`).
+## Complete Command Reference
 
-You can create or customize drivers interactively using `checkpoint backend` or write a custom `.conf` file:
+| Option | Description | Example |
+|---|---|---|
+| **Actions** | | |
+| `create` | Create a system snapshot (default when invoked with no arguments) | `checkpoint create` |
+| `-nc, --no-cleanup` | Create a snapshot without running rotation cleanup | `checkpoint -nc` |
+| `-cl, --cleanup-only` | Run cleanup only (keeps your last `N` normal snapshots) | `checkpoint -cl` |
+| `-ch, --check` | Check if a snapshot backend is ready and exit | `checkpoint -ch` |
+| `-l, --list` | List existing snapshots in a clean table | `checkpoint -l` |
+| `-d, --delete [query]` | Interactive deletion menu (`fzf`) or delete by matching text | `checkpoint -d` |
+| **Modifiers** | | |
+| `-m, --comment <msg>` | Add a custom description to the snapshot | `checkpoint -m "Pre-upgrade"` |
+| `-ks, --keep-snapshot` | Protect snapshot from auto-cleanup by tagging it `[KEEP]` | `checkpoint -ks` |
+| `-f, --force-delete` | Allow deleting `[KEEP]` snapshots during cleanup or deletion | `checkpoint -f -cl` |
+| `-k, --keep <N>` | Temporarily override how many normal snapshots to keep | `checkpoint -k 10` |
+| `-r, --rsync` | Use an RSYNC-based backend for this run | `checkpoint -r` |
+| `-b, --btrfs` | Use a BTRFS-based backend for this run | `checkpoint -b` |
+| `-sd, --snapshot-device <dev>` | Override the target backup partition or filesystem UUID | `checkpoint -sd /dev/sdb1` |
+| `--backend <name>` | Select a specific backend (`snapper`, `timeshift-btrfs`, `timeshift-rsync`) | `checkpoint --backend snapper` |
+| `--type <type>` | Snapshot phase for paired backups (`single`, `pre`, or `post`) | `checkpoint --type pre` |
+| `--pre-id <id>` | Link a `post` snapshot to its matching `pre` snapshot ID | `checkpoint --type post --pre-id 14` |
+| `--porcelain` | Machine-readable `KEY="VALUE"` output for scripts and Advance | `checkpoint --porcelain` |
+| **General** | | |
+| `-c, --changelog [ver]` | View release notes or open the interactive release browser | `checkpoint -c` |
+| `-U, --self-update, --selfupdate` | Update Checkpoint and reinstall (add `--repair` to repair install) | `checkpoint -U` |
+| `-v, --verbose, --debug` | Enable detailed debug output | `checkpoint -v` |
+| `-V, --version` | Print version and build number, then exit | `checkpoint -V` |
+| `-h, --help` | Display command usage and options summary | `checkpoint -h` |
+| **Subcommands** | | |
+| `check` | Check snapshot backend readiness and exit status | `checkpoint check` |
+| `changelog [ver]` | View release notes or open the interactive release browser | `checkpoint changelog` |
+| `config` | Open the interactive settings menu (`fzf`) | `checkpoint config` |
+| `backend, backends` | Open the backend manager and guided custom driver wizard | `checkpoint backend` |
+| `self-update, selfupdate` | Update Checkpoint and reinstall (supports `--repair`) | `checkpoint self-update` |
+| `uninstall` | Remove per-user Checkpoint installation | `checkpoint uninstall` |
+
+---
+
+## Configuration
+
+The easiest way to configure Checkpoint is interactively via `checkpoint config`. Settings are saved in `~/.config/checkpoint/config`:
+
+| Setting | Purpose | Default |
+|---|---|---|
+| `SNAPSHOT_BACKEND` | Engine to use (`auto`, `snapper`, `timeshift-btrfs`, `timeshift-rsync`, or custom ID) | `auto` |
+| `DEFAULT_KEEP_LIMIT` | Number of normal snapshots to keep during cleanup | `6` |
+| `ALWAYS_KEEP` | Automatically tag every new snapshot with `[KEEP]` (`true`/`false`) | `false` |
+| `ALWAYS_CREATE` | Create a snapshot when `checkpoint` is run with no arguments (`true`/`false`) | `true` |
+| `ALWAYS_CLEANUP` | Run rotation cleanup automatically after creating a snapshot (`true`/`false`) | `true` |
+| `AUTO_RETRIES` | Automatic retries before showing the failure prompt | `1` |
+| `STALL_TIMEOUT` | Freeze-detection timeout in seconds (`0` = disabled) | `0` |
+| `INFINITE_RETRIES` | Keep retrying failed operations automatically (`true`/`false`) | `false` |
+| `SNAPSHOT_DEVICE` | Target partition or device UUID for snapshots | *(empty)* |
+| `SELF_UPDATE_CHECK` | Background update check mode (`prompt`, `notify`, `auto`, `off`) | `prompt` |
+| `USE_COLOR` / `USE_EMOJI` | Enable colored output and icons (`true`/`false`) | `true` |
+
+---
+
+## Advanced & Customization
+
+### Custom Snapshot Backends
+
+All snapshot tools are defined in declarative `.conf` recipes under `catalog/backends/` or `~/.config/checkpoint/backends.d/*.conf`. You can build, duplicate, test, or edit drivers interactively with `checkpoint backend`, or write a `.conf` file directly:
 
 ```ini
 SCHEMA_VERSION=2
@@ -108,106 +197,35 @@ DELETE_CMD='sudo zfs destroy "$SNAPSHOT"'
 LIST_PARSER='awk "{ print \$1 \" | \" \$2 }"'
 ```
 
-### Supported Placeholders
+#### Available Placeholders
 - `$COMMENT`: Snapshot note, description, or automatic timestamp tag.
 - `$SNAP_TYPE`: Snapshot phase for paired transactions (`single`, `pre`, or `post`).
-- `$PRE_ID`: ID of preceding pre-update snapshot (for post-snapshot linking).
+- `$PRE_ID`: Preceding pre-update snapshot ID (for linking `post` snapshots).
 - `$SNAPSHOT`: Snapshot ID passed to `DELETE_CMD`.
 
-## Configuration
+<details>
+<summary><strong>Technical Details (Snapper Behavior, Scripting IPC, XDG & Updater Internals)</strong></summary>
 
-Checkpoint settings can be managed interactively via `checkpoint config` or by editing `~/.config/checkpoint/config`:
+#### Official Snapper Driver Details
+The built-in `snapper.conf` driver manages the `root` config using `--no-dbus` (avoiding `Config is in use` daemon lock contention and background comparison delays) and ASCII table borders for locale-independent parsing. Snapshot `0` and active/default snapshots (`-`, `+`, `*`) are always excluded from cleanup, and descriptions containing `|` preserve `[KEEP]` protection. If you copied `catalog/backends/snapper.conf` into a custom recipe earlier, sync `CREATE_CMD`, `LIST_CMD`, and `DELETE_CMD` from the catalog to pick up these behaviors.
 
-- `SNAPSHOT_BACKEND`: Snapshot engine to use (`auto`, `snapper`, `timeshift-btrfs`, `timeshift-rsync`, or custom driver ID).
-- `DEFAULT_KEEP_LIMIT`: Number of unprotected normal snapshots to retain during rotation (Default: `6`).
-- `ALWAYS_KEEP`: Automatically mark all newly created snapshots as protected `[KEEP]` (`true` or `false`).
-- `ALWAYS_CREATE`: Automatically create a snapshot when invoked without flags (`true` or `false`).
-- `ALWAYS_CLEANUP`: Automatically prune snapshots exceeding limit when invoked without flags (`true` or `false`).
-- `AUTO_RETRIES`: Number of automatic retries before prompting the user (Default: `1`).
-- `STALL_TIMEOUT`: Inactivity watchdog timeout in seconds (Default: `0` = disabled).
-- `INFINITE_RETRIES`: Retry failed snapshot operations continuously (`true` or `false`).
-- `SNAPSHOT_DEVICE`: Target partition or device UUID for snapshots.
-- `SELF_UPDATE_CHECK`: Automatic self-update detector mode (`prompt`, `notify`, `auto`, `off`; Default: `prompt`).
-- `USE_COLOR` / `USE_EMOJI`: Toggle color output and emojis (`true` or `false`).
+#### Machine-Readable Output (`--porcelain`)
+Passing `--porcelain` emits strict `KEY="VALUE"` metadata blocks on stdout (`STATUS="SUCCESS"`, `SNAPSHOT_ID="123"`, `BACKEND="snapper"`) for reliable integration with scripts and `advance`.
 
-Custom driver recipes are stored in `~/.config/checkpoint/backends.d/*.conf`.
+#### XDG Directories
+Checkpoint respects `XDG_CONFIG_HOME` / `CHECKPOINT_CONFIG_DIR` (`~/.config/checkpoint`), `XDG_DATA_HOME` / `CHECKPOINT_DATA_DIR` (`~/.local/share/checkpoint`), and `XDG_CACHE_HOME` / `CHECKPOINT_CACHE_DIR` (`~/.cache/checkpoint`). Set `NO_COLOR=1` to disable ANSI colors.
 
-The official Snapper driver manages the `root` configuration, operates with `--no-dbus` to avoid daemon lock contention (`Config is in use`) and background comparison latency, and explicitly requests ASCII table borders so listing and cleanup work in UTF-8 locales. Snapshot `0` and snapshots marked active or default by Snapper (`-`, `+`, `*`) are excluded from rotation. Descriptions retain `[KEEP]` protection even when they contain `|`. If you copied the official driver into a custom recipe, update its `CREATE_CMD`, `LIST_CMD`, and `DELETE_CMD` from `catalog/backends/snapper.conf` to receive these fixes.
+#### Self-Update Internals
+- **Per-user public installs (`bootstrap.sh`):** Update by downloading the `master.tar.gz` archive over HTTPS with `curl` or `wget` and extracting with `tar` (no `git` or `gh` required).
+- **Git checkouts (`.git` present):** Pull the current branch from `origin` with `--ff-only` without rewriting remotes. Public HTTPS clones automatically bypass local credential helpers (`-c credential.helper=`); private clones use configured HTTPS credentials or non-interactive SSH (`BatchMode=yes`). Uncommitted tracked changes trigger an interactive auto-stash prompt in terminals (or refuse safely non-interactively).
+- **Reliability guards:** Runs are serialized with `flock`, downloads/fetches default to a 30-second timeout (`SELF_UPDATE_TIMEOUT=120s` for slow connections), Ctrl+C stops helper processes cleanly, and interrupted installations are retried automatically on the next run.
 
-## Usage
-
-### Common Examples
-
-```bash
-# Create a normal checkpoint
-checkpoint
-
-# Create a protected checkpoint with comment
-checkpoint -ks -m "Undeletable state"
-
-# List existing snapshots
-checkpoint -l
-
-# Interactive targeted deletion via fzf
-checkpoint -d
-
-# Targeted deletion by pattern
-checkpoint -d "kernel"
-
-# Open interactive configuration menu
-checkpoint config
-
-# Open interactive backend manager & custom wizard
-checkpoint backend
-```
-
-### CLI Options Reference
-
-| Option | Description | Example |
-|---|---|---|
-| **Actions** | | |
-| `create` | Create a system snapshot (default action when invoked with no args) | `checkpoint create` |
-| `-nc, --no-cleanup` | Create snapshot without running rotation cleanup | `checkpoint -nc` |
-| `-cl, --cleanup-only` | Run snapshot cleanup logic only (keeping last $N$ normal snapshots) | `checkpoint -cl` |
-| `-ch, --check` | Verify snapshot backend readiness and exit | `checkpoint -ch` |
-| `-l, --list` | List existing snapshots in a formatted table | `checkpoint -l` |
-| `-d, --delete [query]` | Interactive deletion menu via `fzf` or matching pattern | `checkpoint -d` |
-| **Modifiers** | | |
-| `-m, --comment <msg>` | Add a custom description to the snapshot | `checkpoint -m "Pre-upgrade"` |
-| `-ks, --keep-snapshot` | Mark snapshot as protected `[KEEP]` (never auto-deleted) | `checkpoint -ks` |
-| `-f, --force-delete` | Override protection and delete `[KEEP]` snapshots | `checkpoint -f -cl` |
-| `-k, --keep <N>` | Temporarily override retention limit for this run | `checkpoint -k 10` |
-| `-r, --rsync` | Force RSYNC snapshot mode | `checkpoint -r` |
-| `-b, --btrfs` | Force BTRFS snapshot mode | `checkpoint -b` |
-| `-sd, --snapshot-device <dev>` | Override backup device path or filesystem UUID | `checkpoint -sd /dev/sdb1` |
-| `--backend <name>` | Select snapshot backend (`snapper`, `timeshift-btrfs`, `timeshift-rsync`) | `checkpoint --backend snapper` |
-| `--type <type>` | Paired snapshot type (`single`, `pre`, `post`) | `checkpoint --type pre` |
-| `--pre-id <id>` | Link post-snapshot to preceding pre-snapshot ID | `checkpoint --type post --pre-id 14` |
-| `--porcelain` | Machine-readable `KEY="VALUE"` output for automated IPC | `checkpoint --porcelain` |
-| `-c, --changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint -c` |
-| `-U, --self-update, --selfupdate` | Update Checkpoint and reinstall (`--repair` to repair install) | `checkpoint -U` |
-| `-v, --verbose, --debug` | Enable detailed execution debug logs | `checkpoint -v` |
-| `-V, --version` | Print version information and exit | `checkpoint -V` |
-| `-h, --help` | Display command usage and options summary | `checkpoint -h` |
-| **Subcommands** | | |
-| `check` | Verify snapshot backend readiness and exit code | `checkpoint check` |
-| `changelog [ver]` | View release notes or open interactive FZF version browser | `checkpoint changelog` |
-| `config` | Interactive settings and configuration wizard via `fzf` | `checkpoint config` |
-| `backend, backends` | Interactive backend management & custom snapshot driver wizard | `checkpoint backend` |
-| `self-update, selfupdate` | Update Checkpoint and reinstall (supports `--repair`) | `checkpoint self-update` / `checkpoint self-update --repair` |
-| `uninstall` | Remove per-user Checkpoint installation (supports `--purge`, `--keep-config`, `--dry-run`) | `checkpoint uninstall` |
-
-Public installations created with `bootstrap.sh` update automatically using only `curl`/`wget` and `tar` (no `git` or `gh` required). Git checkouts pull the current branch from the configured `origin` without rewriting remotes; public HTTPS clones bypass local credential helpers automatically so stalled helpers (such as GitHub CLI) cannot block updates, while private checkouts use configured HTTPS credentials or non-interactive SSH. Self-update serializes runs with `flock`, offers an interactive auto-stash prompt for uncommitted tracked changes in Git checkouts, and cancels cleanly on Ctrl+C.
-
-Network operations time out after 30 seconds by default (`SELF_UPDATE_TIMEOUT=120s` for slower connections). If installation fails after downloading, or if any installed symlinks/man pages are missing, `checkpoint self-update` (or `checkpoint self-update --repair`) automatically repairs the installation.
-
-See `man checkpoint` for full documentation.
-
-For upcoming features in development and full release history, see [CHANGELOG.md](CHANGELOG.md) (or run `checkpoint -c`).
+</details>
 
 ---
 
-## License
+## Documentation & License
 
-This project is licensed under the GNU General Public License v3.0 (GPLv3) — see the [LICENSE](LICENSE) file for details.
-
+- Full manual: `man checkpoint`
+- Release history & upcoming features: [CHANGELOG.md](CHANGELOG.md) or `checkpoint -c`
+- Licensed under the GNU General Public License v3.0 (GPLv3) — see [LICENSE](LICENSE)
