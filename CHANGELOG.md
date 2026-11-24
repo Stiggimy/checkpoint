@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- **High Priority — Coordinated Root + Home Snapper Snapshots**: Optional snapshots of both `/` and `/home` during each checkpoint (including Advance `pre`/`post` pairs), with reliable cross-config ID pairing, joint listing and retention/deletion (`[KEEP]` included), explicit recovery from partial failures, and separate opt-in `/home` restoration. Preserve existing root-only snapshots and the Advance-facing snapshot ID/output contract.
 - **Express & Comprehensive Wizard Overhaul**: Two-tier wizard architecture (Express vs Comprehensive) with maximum field auto-inference, ultra-plain non-technical guidance for manual fields, and graceful premature exit protection (Save Partial Draft, Discard, or Continue).
 - **Full CLI Localization (i18n)**: Multi-language translation catalogs (`gettext`) for snapshot prompts, banners, and interactive menus.
 - **Desktop Companion GUI**: Standalone graphical dashboard for visual snapshot management and one-click system rollbacks.
